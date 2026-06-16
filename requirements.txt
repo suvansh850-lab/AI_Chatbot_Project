@@ -16,3 +16,5 @@ requests
 edge-tts
 audio-recorder-streamlit
 beautifulsoup4
+python-docx
+reportlab
