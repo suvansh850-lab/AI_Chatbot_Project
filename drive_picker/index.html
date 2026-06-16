@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+    .gdrive-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      background: #ffffff;
+      color: #3c4043;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+      transition: all 0.2s;
+    }
+    .gdrive-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 1px 3px 1px rgba(60,64,67,0.15), 0 1px 2px 0 rgba(60,64,67,0.3);
+    }
+    .gdrive-btn img {
+      width: 20px;
+      height: 20px;
+    }
+    
+    /* Popup window styles */
+    .popup-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+      color: #f3f4f6;
+    }
+    .popup-logo {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.2));
+    }
+    .popup-card h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0 0 10px 0;
+    }
+    .popup-card p {
+      font-size: 15px;
+      color: #9ca3af;
+      max-width: 400px;
+      line-height: 1.5;
+      margin: 0 0 28px 0;
+    }
+    .popup-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 28px;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      transition: all 0.2s;
+    }
+    .popup-btn:hover {
+      background: #f9fafb;
+      box-shadow: 0 4px 16px rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+    }
+    .status-msg {
+      font-size: 15px;
+      color: #a1a1aa;
+      font-weight: 500;
+      max-width: 320px;
+      line-height: 1.4;
+    }
+  </style>
+  <script async defer src="https://apis.google.com/js/api.js" onload="onGapiLoad()"></script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="onGisLoad()"></script>
+  <script>
+    // Check if we are running in the popup window
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPopupMode = urlParams.get("mode") === "popup";
+
+    // -------------------------------------------------------------
+    // IMPORTANT: REPLACE THESE WITH YOUR ACTUAL GOOGLE CLOUD CREDENTIALS
+    // -------------------------------------------------------------
+    let DEVELOPER_KEY = '';
+    let CLIENT_ID = '';
+    let APP_ID = '';
+
+    if (isPopupMode) {
+      if (urlParams.get("clientId")) CLIENT_ID = urlParams.get("clientId");
+      if (urlParams.get("developerKey")) DEVELOPER_KEY = urlParams.get("developerKey");
+      if (urlParams.get("appId")) APP_ID = urlParams.get("appId");
+    }
+    // -------------  ------------------------------------------------
+
+    // --- Streamlit component bi-directional communication ---
+    function sendMessageToStreamlit(type, data) {
+      window.parent.postMessage({ isStreamlitMessage: true, type: type, ...data }, "*");
+    }
+    function setComponentValue(value) {
+      sendMessageToStreamlit("streamlit:setComponentValue", {value: value});
+    }
+
+    function initStreamlit() {
+      // Listen to messages from Streamlit containing configuration values
+      window.addEventListener("message", function(event) {
+        if (event.data.type === "streamlit:render") {
+          const args = event.data.args;
+          if (args.clientId) {
+            CLIENT_ID = args.clientId;
+          }
+          if (args.developerKey) {
+            DEVELOPER_KEY = args.developerKey;
+          }
+          if (args.appId) {
+            APP_ID = args.appId;
+          } else if (args.clientId && args.clientId.includes("-")) {
+            APP_ID = args.clientId.split("-")[0];
+          }
+        }
+      });
+
+      // Listen to messages from the popup window
+      window.addEventListener("message", function(event) {
+        if (event.data && event.data.type === "picker_result") {
+          setComponentValue(event.data.file);
+        }
+      });
+
+      sendMessageToStreamlit("streamlit:componentReady", {apiVersion: 1});
+      sendMessageToStreamlit("streamlit:setFrameHeight", {height: 60});
+    }
+
+    function openPickerPopup() {
+      const popupUrl = window.location.origin + window.location.pathname + 
+                       `?mode=popup` +
+                       `&clientId=${encodeURIComponent(CLIENT_ID)}` +
+                       `&developerKey=${encodeURIComponent(DEVELOPER_KEY)}` +
+                       `&appId=${encodeURIComponent(APP_ID)}`;
+      
+      const popupWidth = 1000;
+      const popupHeight = 700;
+      const left = (window.screen.width - popupWidth) / 2;
+      const top = (window.screen.height - popupHeight) / 2;
+      
+      window.open(
+        popupUrl, 
+        "google_drive_picker_popup", 
+        `width=${popupWidth},height=${popupHeight},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      );
+    }
+
+    // --- Google Drive Picker Logic ---
+    let tokenClient;
+    let oauthToken;
+    let pickerApiLoaded = false;
+    let gapiLoaded = false;
+    let gisLoaded = false;
+
+    function onGapiLoad() {
+      gapiLoaded = true;
+    }
+
+    function onGisLoad() {
+      gisLoaded = true;
+    }
+
+    function onApiLoad() {
+      // Hide button, show status loading indicator
+      const authBtn = document.getElementById("auth-btn");
+      const statusText = document.getElementById("status-text");
+      if (authBtn) authBtn.style.display = "none";
+      if (statusText) {
+        statusText.style.display = "block";
+        statusText.innerHTML = "🔑 Authorizing Google Drive Picker... Please complete the Google Sign-in popup.";
+      }
+
+      if (!gapiLoaded || !gisLoaded) {
+        alert("Google services are still loading. Please wait a moment and try again.");
+        if (authBtn) authBtn.style.display = "inline-flex";
+        if (statusText) statusText.style.display = "none";
+        return;
+      }
+      if (!pickerApiLoaded) {
+        gapi.load('picker', { 'callback': onPickerApiLoad });
+      } else {
+        requestTokenAndOpenPicker();
+      }
+    }
+
+    function onPickerApiLoad() {
+      pickerApiLoaded = true;
+      requestTokenAndOpenPicker();
+    }
+
+    function requestTokenAndOpenPicker() {
+      const authBtn = document.getElementById("auth-btn");
+      const statusText = document.getElementById("status-text");
+
+      try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.readonly',
+          callback: (response) => {
+            if (response.error !== undefined) {
+              console.error("GIS Token error", response);
+              alert("Google Drive authorization failed: " + (response.error_description || response.error));
+              if (authBtn) authBtn.style.display = "inline-flex";
+              if (statusText) statusText.style.display = "none";
+              return;
+            }
+            oauthToken = response.access_token;
+            if (statusText) {
+              statusText.innerHTML = "📂 Opening Google Drive Picker...";
+            }
+            createPicker();
+          },
+        });
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } catch (err) {
+        console.error("Failed to initialize Google Identity token client:", err);
+        alert("Could not load Google Sign-In helper. Verify that your Client ID is configured correctly.");
+        if (authBtn) authBtn.style.display = "inline-flex";
+        if (statusText) statusText.style.display = "none";
+      }
+    }
+
+    function createPicker() {
+      if (oauthToken) {
+        var view = new google.picker.View(google.picker.ViewId.DOCS);
+        var picker = new google.picker.PickerBuilder()
+            .addView(view)
+            .setOAuthToken(oauthToken)
+            .setDeveloperKey(DEVELOPER_KEY)
+            .setAppId(APP_ID)
+            .setCallback(pickerCallback)
+            .build();
+         picker.setVisible(true);
+      }
+    }
+
+    function pickerCallback(data) {
+      if (data.action == google.picker.Action.PICKED) {
+        var doc = data.docs[0];
+        // Send the file info back to the parent window (Streamlit iframe)
+        if (window.opener) {
+          window.opener.postMessage({
+            type: "picker_result",
+            file: {
+              id: doc.id,
+              name: doc.name,
+              url: doc.url,
+              mimeType: doc.mimeType,
+              token: oauthToken
+            }
+          }, "*");
+        }
+        window.close();
+      } else if (data.action == google.picker.Action.CANCEL) {
+        window.close();
+      }
+    }
+
+    function onBodyLoad() {
+      if (isPopupMode) {
+        // Wait for user click interaction to prevent browser popup blocks
+      } else {
+        initStreamlit();
+      }
+    }
+  </script>
+</head>
+<body onload="onBodyLoad()">
+  <div id="main-content">
+    <script>
+      if (isPopupMode) {
+        document.write(`
+          <div class="popup-card">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" class="popup-logo" alt="Google Drive">
+            <h2>Connect Google Drive</h2>
+            <p>Authorize access to safely browse and import your files directly into the AI Assistant workspace.</p>
+            <button id="auth-btn" class="popup-btn" onclick="onApiLoad()">
+              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48" style="margin-right:10px; display: inline-block; vertical-align: middle;">
+                <g>
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                  <path fill="#4285F4" d="M46.5 24c0-1.63-.15-3.2-.43-4.75H24v9h12.75c-.55 2.95-2.22 5.45-4.72 7.12v5.93h7.62c4.46-4.11 7.03-10.17 7.03-17.3z"></path>
+                  <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z"></path>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.62-5.93c-2.11 1.41-4.8 2.24-8.27 2.24-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                </g>
+              </svg>
+              Sign in with Google
+            </button>
+            <div id="status-text" class="status-msg" style="display:none;"></div>
+          </div>
+        `);
+      } else {
+        document.write(`
+          <button class="gdrive-btn" onclick="openPickerPopup()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg">
+            Browse Google Drive
+          </button>
+        `);
+      }
+    </script>
+  </div>
+</body>
+</html>
