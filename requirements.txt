@@ -1,6 +1,7 @@
 streamlit
 fastapi
 uvicorn
+pydantic
 pandas
 plotly
 google-generativeai
@@ -17,4 +18,4 @@ edge-tts
 audio-recorder-streamlit
 beautifulsoup4
 python-docx
-reportlab
+reportlab
