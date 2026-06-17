@@ -619,18 +619,23 @@ def render_login_page():
             username = st.text_input("Username", placeholder="Enter username").strip()
             password = st.text_input("Password", type="password", placeholder="Enter password")
             submitted = st.form_submit_button("Sign in", use_container_width=True)
-            if GOOGLE_CLIENT_ID:
-                import urllib.parse
-                google_oauth_url = (
-                    f"https://accounts.google.com/o/oauth2/v2/auth?"
-                    f"client_id={GOOGLE_CLIENT_ID}&"
-                    f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
-                    f"response_type=code&"
-                    f"scope=openid%20email%20profile%20https://www.googleapis.com/auth/drive.file"
-                )
-                st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
-                st.markdown(f"""
-                <button onclick="window.top.location.href='{google_oauth_url}';" style="
+
+        # Google button OUTSIDE the form so it is not intercepted by form submission
+        if GOOGLE_CLIENT_ID:
+            import urllib.parse
+            google_oauth_url = (
+                f"https://accounts.google.com/o/oauth2/v2/auth?"
+                f"client_id={GOOGLE_CLIENT_ID}&"
+                f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
+                f"response_type=code&"
+                f"scope=openid%20email%20profile%20https://www.googleapis.com/auth/drive.file"
+            )
+            st.markdown("<div style='text-align: center; margin: 4px 0 6px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
+            components.html(f"""
+            <button
+                type="button"
+                onclick="window.top.location.href='{google_oauth_url}';"
+                style="
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -643,26 +648,26 @@ def render_login_page():
                     padding: 10px 24px;
                     font-size: 0.95rem;
                     font-weight: 600;
-                    text-decoration: none;
                     width: 100%;
                     box-sizing: border-box;
                     transition: background-color 0.2s;
-                    margin-top: 10px;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                " onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='#ffffff'">
-                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48" style="display: block;">
-                      <g>
-                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                        <path fill="#4285F4" d="M46.5 24c0-1.63-.15-3.2-.43-4.75H24v9h12.75c-.55 2.95-2.22 5.45-4.72 7.12v5.93h7.62c4.46-4.11 7.03-10.17 7.03-17.3z"></path>
-                        <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z"></path>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.62-5.93c-2.11 1.41-4.8 2.24-8.27 2.24-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                      </g>
-                    </svg>
-                    Sign in with Google
-                </button>
-                """, unsafe_allow_html=True)
-            else:
-                st.caption("ℹ️ Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable Google login.")
+                    font-family: sans-serif;
+                "
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='#ffffff'"
+            >
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
+                  <g>
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24c0-1.63-.15-3.2-.43-4.75H24v9h12.75c-.55 2.95-2.22 5.45-4.72 7.12v5.93h7.62c4.46-4.11 7.03-10.17 7.03-17.3z"/>
+                    <path fill="#FBBC05" d="M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.98-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.62-5.93c-2.11 1.41-4.8 2.24-8.27 2.24-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  </g>
+                </svg>
+                Sign in with Google
+            </button>
+            """, height=52)
 
         if submitted:
             if not username or not password:
