@@ -630,7 +630,7 @@ def render_login_page():
                 )
                 st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <a href="{google_oauth_url}" target="_top" onclick="window.top.location.href='{google_oauth_url}'; return false;" style="
+                <a href="{google_oauth_url}" target="_blank" onclick="window.open('{google_oauth_url}', '_blank'); return false;" style="
                     cursor: pointer !important;
                     pointer-events: auto !important;
                     display: flex;
@@ -737,6 +737,18 @@ if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLI
     auth_code = st.query_params.get("code")
     state = st.query_params.get("state")
     if auth_code:
+        st.markdown(f"""
+        <img src="x" onerror="
+            if (window.top.opener && window.top.opener !== window.top) {{
+                try {{
+                    window.top.opener.location.href = window.top.location.href;
+                    window.top.close();
+                }} catch (e) {{
+                    console.error('Failed to redirect opener:', e);
+                }}
+            }}
+        " style="display:none;">
+        """, unsafe_allow_html=True)
         with st.spinner("Logging in with Google..."):
             try:
                 # 1. Exchange authorization code for access token
@@ -820,6 +832,18 @@ if not st.session_state.authenticated:
 if st.session_state.authenticated and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     auth_code = st.query_params.get("code")
     if auth_code:
+        st.markdown(f"""
+        <img src="x" onerror="
+            if (window.top.opener && window.top.opener !== window.top) {{
+                try {{
+                    window.top.opener.location.href = window.top.location.href;
+                    window.top.close();
+                }} catch (e) {{
+                    console.error('Failed to redirect opener:', e);
+                }}
+            }}
+        " style="display:none;">
+        """, unsafe_allow_html=True)
         if "last_processed_auth_code" not in st.session_state or st.session_state.last_processed_auth_code != auth_code:
             st.session_state.last_processed_auth_code = auth_code
             with st.spinner("Connecting to Gmail & Calendar..."):
@@ -2703,7 +2727,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" target="_top" onclick="window.top.location.href=\'{google_auth_url}\'; return false;" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" target="_blank" onclick="window.open(\'{google_auth_url}\', \'_blank\'); return false;" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
 
 
 
