@@ -630,9 +630,8 @@ def render_login_page():
                 )
                 st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <a href="{google_oauth_url}" style="
-                    cursor: pointer !important;
-                    pointer-events: auto !important;
+                <button onclick="window.top.location.href='{google_oauth_url}';" style="
+                    cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -660,7 +659,7 @@ def render_login_page():
                       </g>
                     </svg>
                     Sign in with Google
-                </a>
+                </button>
                 """, unsafe_allow_html=True)
             else:
                 st.caption("ℹ️ Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable Google login.")
