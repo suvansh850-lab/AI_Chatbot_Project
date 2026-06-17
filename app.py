@@ -631,7 +631,7 @@ def render_login_page():
                 )
                 st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <a href="{google_oauth_url}" target="_self" style="
+                <a href="{google_oauth_url}" target="_top" style="
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -2702,7 +2702,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" target="_self" style="text-decoration:none;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" target="_top" style="text-decoration:none;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
 
 
 
