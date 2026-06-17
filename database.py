@@ -21,9 +21,21 @@ except ImportError:
         pass
 
 
-DB_CONNECT_TIMEOUT = int(os.getenv("MYSQL_CONNECT_TIMEOUT", "15"))
-DB_RECONNECT_ATTEMPTS = int(os.getenv("MYSQL_RECONNECT_ATTEMPTS", "2"))
-DB_RECONNECT_DELAY = float(os.getenv("MYSQL_RECONNECT_DELAY", "1"))
+def get_secret(key: str, default: str = "") -> str:
+    try:
+        import streamlit as st
+        if key in st.secrets:
+            val = st.secrets[key]
+            if val is not None:
+                return str(val)
+    except Exception:
+        pass
+    return os.getenv(key, default)
+
+
+DB_CONNECT_TIMEOUT = int(get_secret("MYSQL_CONNECT_TIMEOUT", "15"))
+DB_RECONNECT_ATTEMPTS = int(get_secret("MYSQL_RECONNECT_ATTEMPTS", "2"))
+DB_RECONNECT_DELAY = float(get_secret("MYSQL_RECONNECT_DELAY", "1"))
 
 def get_db_config() -> dict[str, Any]:
     # Default config
@@ -129,7 +141,7 @@ DB_PASSWORD = DB_CONFIG["password"]
 DB_NAME = DB_CONFIG["database"]
 
 # Determine database mode
-DB_TYPE = os.getenv("DB_TYPE", "").lower()
+DB_TYPE = get_secret("DB_TYPE", "").lower()
 USE_SQLITE = False
 
 if not MYSQL_AVAILABLE or DB_TYPE == "sqlite":
@@ -242,7 +254,7 @@ class SQLiteConnectionWrapper:
 
 
 def sqlite_connection():
-    db_path = os.getenv("SQLITE_DATABASE_PATH", "ai_chatbot.db")
+    db_path = get_secret("SQLITE_DATABASE_PATH", "ai_chatbot.db")
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     # Enable foreign key constraint enforcement in SQLite
@@ -964,7 +976,7 @@ def database_status() -> dict[str, str]:
     try:
         init_database()
         if USE_SQLITE:
-            db_path = os.getenv("SQLITE_DATABASE_PATH", "ai_chatbot.db")
+            db_path = get_secret("SQLITE_DATABASE_PATH", "ai_chatbot.db")
             return {"ok": "true", "database": f"SQLite ({db_path})", "host": "local"}
         return {"ok": "true", "database": DB_NAME, "host": DB_HOST}
     except Exception as ex:

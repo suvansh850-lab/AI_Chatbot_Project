@@ -50,10 +50,22 @@ except Exception as ex:
 
 st.set_page_config(page_title="AI Chatbot", layout="wide", page_icon="🤖")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+def get_secret(key, default=""):
+    try:
+        # Check Streamlit secrets first
+        if key in st.secrets:
+            val = st.secrets[key]
+            if val is not None:
+                return str(val)
+    except Exception:
+        pass
+    # Fallback to environment variables
+    return os.getenv(key, default)
+
+GEMINI_API_KEY = get_secret("GEMINI_API_KEY", "")
+OPENAI_API_KEY = get_secret("OPENAI_API_KEY", "")
+OPENROUTER_API_KEY = get_secret("OPENROUTER_API_KEY", "")
+GROQ_API_KEY = get_secret("GROQ_API_KEY", "")
 
 def get_openai_api_key():
     return OPENAI_API_KEY # edge-tts doesn't need an API key
@@ -73,12 +85,12 @@ GROQ_MODEL_PRIORITY = [
     "gemma2-9b-it",
 ]
 
-LOGIN_USERNAME = os.getenv("LOGIN_USERNAME", "admin")
-LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "suvansh123")
+LOGIN_USERNAME = get_secret("LOGIN_USERNAME", "admin")
+LOGIN_PASSWORD = get_secret("LOGIN_PASSWORD", "suvansh123")
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://aichatbotproject-ro8mdmtxux3zwvtcpneatu.streamlit.app")
+GOOGLE_CLIENT_ID = get_secret("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = get_secret("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = get_secret("GOOGLE_REDIRECT_URI", "https://aichatbotproject-ro8mdmtxux3zwvtcpneatu.streamlit.app")
 
 def get_login_password():
     return LOGIN_PASSWORD
@@ -2034,7 +2046,7 @@ def render_google_drive_upload():
         st.warning("⚠️ Google Client ID is not configured. Direct browsing is disabled. Please configure GOOGLE_CLIENT_ID in your environment variables.")
     else:
         # Load developer key (default fallback or environment variable)
-        developer_key = os.getenv("GOOGLE_DEVELOPER_KEY", "")
+        developer_key = get_secret("GOOGLE_DEVELOPER_KEY", "")
         app_id = GOOGLE_CLIENT_ID.split("-")[0] if "-" in GOOGLE_CLIENT_ID else ""
 
         # Display the custom Google Drive Picker component
