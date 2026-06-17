@@ -630,7 +630,7 @@ def render_login_page():
                 )
                 st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <a href="{google_oauth_url}" target="_blank" onclick="window.open('{google_oauth_url}', '_blank'); return false;" style="
+                <a href="{google_oauth_url}" style="
                     cursor: pointer !important;
                     pointer-events: auto !important;
                     display: flex;
