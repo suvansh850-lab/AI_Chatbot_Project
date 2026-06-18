@@ -2757,16 +2757,7 @@ def render_sidebar():
             st.session_state.ai_insights_narrative = ""
             st.rerun()
 
-        # Performance Profiler
-        profiler_data = st.session_state.get("profiler_last_run", {})
-        if profiler_data:
-            st.markdown('<div class="side-section-title">Performance Profiler</div>', unsafe_allow_html=True)
-            with st.expander("⚡ Execution Times", expanded=False):
-                total_time = sum(profiler_data.values())
-                for block, val in profiler_data.items():
-                    st.markdown(f"**{block}**:<br>`{val:.3f}s`", unsafe_allow_html=True)
-                st.markdown(f"---")
-                st.markdown(f"**Total Run**: `{total_time:.3f}s`", unsafe_allow_html=True)
+
 
 # --- detect model once ---
 if st.session_state.cb_model is None or st.session_state.cb_model == "gpt-4o":
