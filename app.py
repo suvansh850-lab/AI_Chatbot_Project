@@ -586,6 +586,30 @@ div[data-testid="stForm"] button:hover {
     align-items: center;
     gap: 8px;
 }
+
+/* Premium Chat Form styling */
+[data-testid="stForm"] {
+    border: 1px solid #e5e3d9 !important;
+    background-color: #fcfbf9 !important;
+    border-radius: 14px !important;
+    padding: 20px !important;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.02) !important;
+    margin-top: 15px !important;
+}
+
+[data-testid="stFormSubmitButton"] button {
+    background-color: #da7756 !important;
+    color: white !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: 1px solid #da7756 !important;
+    height: 38px !important;
+}
+
+[data-testid="stFormSubmitButton"] button:hover {
+    background-color: #c56241 !important;
+    border-color: #c56241 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2161,17 +2185,20 @@ def render_google_drive_upload():
             """, 
             unsafe_allow_html=True
         )
-        drive_link = st.text_input(
-            "Google Drive link",
-            placeholder="Paste a shared Google Drive link",
-            key="drive_share_link",
-        )
-        file_kind = st.selectbox(
-            "Drive file type",
-            ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
-            key="drive_file_kind",
-        )
-        if st.button("Import via Link", use_container_width=True):
+        with st.form("gdrive_link_form", clear_on_submit=True):
+            drive_link = st.text_input(
+                "Google Drive link",
+                placeholder="Paste a shared Google Drive link",
+                key="drive_share_link",
+            )
+            file_kind = st.selectbox(
+                "Drive file type",
+                ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
+                key="drive_file_kind",
+            )
+            import_clicked = st.form_submit_button("Import via Link", use_container_width=True)
+
+        if import_clicked:
             try:
                 file_obj, filename, mime_type = download_drive_share_link(drive_link, file_kind)
                 attach_file_to_chat_context(file_obj, filename, mime_type)
@@ -2751,8 +2778,11 @@ record_profiler_checkpoint("Sidebar Rendering")
 
 if st.session_state.selected_nav == "Search Chats":
     st.subheader("Search Chats")
-    query = st.text_input("Search chat history", placeholder="Type a keyword")
-    if query:
+    with st.form("search_chats_form", clear_on_submit=False):
+        query = st.text_input("Search chat history", placeholder="Type a keyword")
+        search_clicked = st.form_submit_button("Search 🔍", use_container_width=True)
+        
+    if search_clicked and query:
         matches = [
             msg for msg in st.session_state.cb_messages
             if query.lower() in str(msg.get("content", "")).lower()
@@ -2764,8 +2794,10 @@ if st.session_state.selected_nav == "Search Chats":
                     st.markdown(msg["content"])
         else:
             st.info("No matching chats found.")
-    else:
+    elif search_clicked:
         st.info("Type a keyword to search your current chat history.")
+    else:
+        st.info("Use the search bar above to query message history.")
     record_profiler_checkpoint("Search Chats View")
     st.stop()
 
@@ -3122,11 +3154,37 @@ with chat_box:
                     st.audio(st.session_state.tts_audio_cache[msg_hash], format="audio/mp3", autoplay=True)
 
 
-# --- chat input ---
+# --- chat input form ---
 render_model_picker()
 provider = st.session_state.llm_provider
 model_name = st.session_state.cb_model if provider == "Gemini" else st.session_state.groq_model
-typed = st.chat_input("Ask me anything...", accept_file="multiple", file_type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"])
+
+with st.form("chat_form", clear_on_submit=True):
+    uploaded_files = st.file_uploader(
+        "Attach files (documents, images, or datasets)",
+        type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"],
+        accept_multiple_files=True,
+        label_visibility="collapsed"
+    )
+    col_input, col_submit = st.columns([85, 15])
+    with col_input:
+        user_input_val = st.text_input(
+            "Message",
+            placeholder="Type your message here...",
+            label_visibility="collapsed",
+            key="chat_msg_text_input"
+        )
+    with col_submit:
+        submitted = st.form_submit_button("Send 🚀", use_container_width=True)
+
+typed = None
+if submitted:
+    if user_input_val or uploaded_files:
+        class TypedInput:
+            def __init__(self, text, files):
+                self.text = text
+                self.files = files
+        typed = TypedInput(user_input_val, uploaded_files)
 
 st.markdown('<div class="voice-search-label">Voice Search</div>', unsafe_allow_html=True)
 # Voice recorder — styled as a circular mic button floating next to chat input
