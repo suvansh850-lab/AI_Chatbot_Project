@@ -7,6 +7,25 @@ from audio_recorder_streamlit import audio_recorder
 import base64
 import requests
 import streamlit.components.v1 as components
+import time
+
+# --- Performance Profiler Setup ---
+if "profiler_checkpoints" in st.session_state:
+    st.session_state.profiler_last_run = dict(st.session_state.profiler_checkpoints)
+else:
+    st.session_state.profiler_last_run = {}
+
+st.session_state.profiler_checkpoints = {}
+profiler_start_time = time.time()
+profiler_last_time = profiler_start_time
+
+def record_profiler_checkpoint(name):
+    global profiler_last_time
+    now = time.time()
+    elapsed = now - profiler_last_time
+    st.session_state.profiler_checkpoints[name] = elapsed
+    profiler_last_time = now
+
 
 # --- Declare Google Drive Picker Component ---
 try:
@@ -205,6 +224,7 @@ def db_action_anonymous(action, *args, **kwargs):
         return None
 
 # Load FontAwesome CDN for modern vector icons
+record_profiler_checkpoint("Startup & DB Session Setup")
 st.markdown('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">', unsafe_allow_html=True)
 
 st.markdown("""
@@ -915,6 +935,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+record_profiler_checkpoint("CSS & UI Styling")
+
 if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
     try:
         import google.generativeai as genai
@@ -969,6 +991,8 @@ for key, default in [
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
+
+record_profiler_checkpoint("Session State & API Setup")
 
 if not st.session_state.db_ready:
     st.warning(
@@ -2706,11 +2730,24 @@ def render_sidebar():
             st.session_state.ai_insights_narrative = ""
             st.rerun()
 
+        # Performance Profiler
+        profiler_data = st.session_state.get("profiler_last_run", {})
+        if profiler_data:
+            st.markdown('<div class="side-section-title">Performance Profiler</div>', unsafe_allow_html=True)
+            with st.expander("⚡ Execution Times", expanded=False):
+                total_time = sum(profiler_data.values())
+                for block, val in profiler_data.items():
+                    st.markdown(f"**{block}**:<br>`{val:.3f}s`", unsafe_allow_html=True)
+                st.markdown(f"---")
+                st.markdown(f"**Total Run**: `{total_time:.3f}s`", unsafe_allow_html=True)
+
 # --- detect model once ---
 if st.session_state.cb_model is None or st.session_state.cb_model == "gpt-4o":
     st.session_state.cb_model = "gemini-1.5-flash"
 
+record_profiler_checkpoint("Pre-Sidebar Setup")
 render_sidebar()
+record_profiler_checkpoint("Sidebar Rendering")
 
 if st.session_state.selected_nav == "Search Chats":
     st.subheader("Search Chats")
@@ -2729,6 +2766,7 @@ if st.session_state.selected_nav == "Search Chats":
             st.info("No matching chats found.")
     else:
         st.info("Type a keyword to search your current chat history.")
+    record_profiler_checkpoint("Search Chats View")
     st.stop()
 
 if st.session_state.selected_nav == "Documents":
@@ -2737,18 +2775,22 @@ if st.session_state.selected_nav == "Documents":
         st.text_area("Current document text", st.session_state.cb_file_text, height=420)
     else:
         st.info("No document is attached yet. Go to Chat and upload a PDF, TXT, DOC, DOCX, or PPTX file with your message.")
+    record_profiler_checkpoint("Documents View")
     st.stop()
 
 if st.session_state.selected_nav == "Data Analysis":
     render_data_analysis()
+    record_profiler_checkpoint("Data Analysis View")
     st.stop()
 
 if st.session_state.selected_nav == "Google Drive Upload":
     render_google_drive_upload()
+    record_profiler_checkpoint("Google Drive Upload View")
     st.stop()
 
 if st.session_state.selected_nav == "Document Library":
     render_document_library()
+    record_profiler_checkpoint("Document Library View")
     st.stop()
 
 if st.session_state.selected_nav == "History":
@@ -2760,6 +2802,7 @@ if st.session_state.selected_nav == "History":
                 st.markdown(msg["content"])
     else:
         st.info("No chat history yet.")
+    record_profiler_checkpoint("History View")
     st.stop()
 
 # --- toolbar ---
@@ -2957,6 +3000,8 @@ for i, q in enumerate(quick):
     with qcols[i]:
         if st.button(q, key=f"cbq_{i}", use_container_width=True):
             chosen = q.split(" ", 1)[1]
+
+record_profiler_checkpoint("Quick Prompts & Navigation Routing")
 
 # --- chat history ---
 chat_box = st.container()
@@ -3690,3 +3735,4 @@ if user_input:
                         str(ex),
                     )
                 st.error(f"Generation error: {ex}")
+record_profiler_checkpoint("Chat View & Input")
