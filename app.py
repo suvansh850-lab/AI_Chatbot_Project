@@ -664,7 +664,7 @@ def render_login_page():
                 )
                 st.markdown("<div style='text-align: center; margin: 12px 0 10px 0; color: #94a3b8; font-size: 0.85rem;'>or</div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <a href="{google_oauth_url}" target="_blank" onclick="window.open('{google_oauth_url}', '_blank'); return false;" style="
+                <a href="{google_oauth_url}" style="
                     cursor: pointer !important;
                     pointer-events: auto !important;
                     display: flex;
@@ -771,18 +771,7 @@ if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLI
     auth_code = st.query_params.get("code")
     state = st.query_params.get("state")
     if auth_code:
-        st.markdown(f"""
-        <img src="x" onerror="
-            if (window.top.opener && window.top.opener !== window.top) {{
-                try {{
-                    window.top.opener.location.href = window.top.location.href;
-                    window.top.close();
-                }} catch (e) {{
-                    console.error('Failed to redirect opener:', e);
-                }}
-            }}
-        " style="display:none;">
-        """, unsafe_allow_html=True)
+        st.info("Processing Google login...", icon="🔐")
         with st.spinner("Logging in with Google..."):
             try:
                 # 1. Exchange authorization code for access token
@@ -2516,10 +2505,18 @@ def get_active_model(provider):
         return "", [], str(ex)
 
 def get_voice_transcription_model():
+    """Returns (model_name, provider, error). Provider is 'Gemini' or 'Groq'."""
+    active_provider = st.session_state.get("llm_provider", "Gemini")
+    provider = MODEL_OPTIONS.get(active_provider, {}).get("provider", "Gemini")
+    if provider == "Groq":
+        if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
+            return "", "Groq", "Groq API key not configured. Please add your GROQ_API_KEY."
+        return "whisper-large-v3-turbo", "Groq", ""
+    # Default: Gemini
     active_model, _, model_error = get_active_model("Gemini")
     if active_model:
-        return active_model, ""
-    return "", model_error or "No compatible Gemini model was found for voice transcription."
+        return active_model, "Gemini", ""
+    return "", "Gemini", model_error or "No compatible Gemini model was found for voice transcription."
 
 def render_model_picker():
     selected_key = st.session_state.llm_provider
@@ -2697,7 +2694,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" target="_blank" onclick="window.open(\'{google_auth_url}\', \'_blank\'); return false;" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
 
 
 
@@ -3141,19 +3138,32 @@ audio_bytes = audio_recorder(text="", recording_color="#ef4444", neutral_color="
 if audio_bytes and st.session_state.last_audio_bytes != audio_bytes:
     st.session_state.last_audio_bytes = audio_bytes
     try:
-        voice_model_used, voice_model_error = get_voice_transcription_model()
+        voice_model_used, voice_provider, voice_model_error = get_voice_transcription_model()
         if not voice_model_used:
             st.error(f"Voice transcription error: {voice_model_error}")
             st.stop()
-        
-        with st.spinner("Transcribing with Gemini..."):
-            audio_model = genai.GenerativeModel(voice_model_used)
-            audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
-            resp = audio_model.generate_content([
-                "Please accurately transcribe this audio into text. Output only the transcription, nothing else.", 
-                audio_part
-            ])
-            transcribed_text = resp.text
+
+        if voice_provider == "Groq":
+            with st.spinner("Transcribing with Groq Whisper..."):
+                import io
+                groq_client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+                audio_file = io.BytesIO(audio_bytes)
+                audio_file.name = "audio.wav"
+                resp = groq_client.audio.transcriptions.create(
+                    model=voice_model_used,
+                    file=audio_file,
+                    response_format="text"
+                )
+                transcribed_text = resp if isinstance(resp, str) else resp.text
+        else:
+            with st.spinner("Transcribing with Gemini..."):
+                audio_model = genai.GenerativeModel(voice_model_used)
+                audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
+                resp = audio_model.generate_content([
+                    "Please accurately transcribe this audio into text. Output only the transcription, nothing else.",
+                    audio_part
+                ])
+                transcribed_text = resp.text
 
         st.session_state.voice_prompt = transcribed_text
         if db_enabled():
