@@ -684,7 +684,7 @@ def render_login_page():
                     transition: background-color 0.2s;
                     margin-top: 10px;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                " onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='#ffffff'" target="_self">
+                " onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='#ffffff'">
                     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48" style="display: block;">
                       <g>
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
@@ -2685,7 +2685,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" target="_self" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
 
 
 
