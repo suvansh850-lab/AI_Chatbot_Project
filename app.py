@@ -3154,37 +3154,11 @@ with chat_box:
                     st.audio(st.session_state.tts_audio_cache[msg_hash], format="audio/mp3", autoplay=True)
 
 
-# --- chat input form ---
+# --- chat input ---
 render_model_picker()
 provider = st.session_state.llm_provider
 model_name = st.session_state.cb_model if provider == "Gemini" else st.session_state.groq_model
-
-with st.form("chat_form", clear_on_submit=True):
-    uploaded_files = st.file_uploader(
-        "Attach files (documents, images, or datasets)",
-        type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"],
-        accept_multiple_files=True,
-        label_visibility="collapsed"
-    )
-    col_input, col_submit = st.columns([85, 15])
-    with col_input:
-        user_input_val = st.text_input(
-            "Message",
-            placeholder="Type your message here...",
-            label_visibility="collapsed",
-            key="chat_msg_text_input"
-        )
-    with col_submit:
-        submitted = st.form_submit_button("Send 🚀", use_container_width=True)
-
-typed = None
-if submitted:
-    if user_input_val or uploaded_files:
-        class TypedInput:
-            def __init__(self, text, files):
-                self.text = text
-                self.files = files
-        typed = TypedInput(user_input_val, uploaded_files)
+typed = st.chat_input("Ask me anything...", accept_file="multiple", file_type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"])
 
 st.markdown('<div class="voice-search-label">Voice Search</div>', unsafe_allow_html=True)
 # Voice recorder — styled as a circular mic button floating next to chat input
