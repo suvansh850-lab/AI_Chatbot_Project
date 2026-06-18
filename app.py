@@ -157,12 +157,32 @@ def db_action(action, *args, **kwargs):
         return None
     try:
         res = action(*args, **kwargs)
-        if action.__name__ in ("save_message", "create_conversation", "delete_conversation", "update_conversation", "clear_conversation_messages"):
+        if action.__name__ in ("save_message", "create_conversation", "delete_conversation", "update_conversation", "clear_conversation_messages", "save_upload", "delete_upload"):
             st.session_state.recent_conversations = None
+            cached_list_conversations.clear()
+            cached_load_messages.clear()
+            cached_load_user_uploads.clear()
+            cached_load_conversation_uploads.clear()
         return res
     except Exception as ex:
         st.session_state.db_error = str(ex)
         return None
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_list_conversations(user_id: int, limit: int):
+    return list_conversations(user_id, limit)
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_load_messages(conversation_id: int):
+    return load_messages(conversation_id)
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_load_user_uploads(user_id: int):
+    return load_user_uploads(user_id)
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_load_conversation_uploads(conversation_id: int):
+    return load_conversation_uploads(conversation_id)
 
 def check_db_connection() -> bool:
     if st.session_state.get("db_ready"):
@@ -1746,7 +1766,7 @@ def render_document_library():
 
     uploads = []
     if db_enabled():
-        uploads = db_action(load_user_uploads, st.session_state.db_user_id) or []
+        uploads = cached_load_user_uploads(st.session_state.db_user_id) or []
     else:
         for conversation in st.session_state.conversations:
             conv_id = conversation["id"]
@@ -2251,11 +2271,11 @@ def load_conversation(conversation_id):
 
     if db_enabled():
         st.session_state.active_conversation_id = int(conversation_id)
-        st.session_state.cb_messages = db_action(load_messages, int(conversation_id)) or []
+        st.session_state.cb_messages = cached_load_messages(int(conversation_id)) or []
         st.session_state.selected_nav = "Chat"
 
         # Load and restore associated attachments from database
-        uploads = db_action(load_conversation_uploads, int(conversation_id)) or []
+        uploads = cached_load_conversation_uploads(int(conversation_id)) or []
         has_dataset = False
         for up in uploads:
             ftype = up["file_type"]
@@ -2319,7 +2339,7 @@ def get_recent_conversations(limit=1000):
     sync_active_conversation()
     if db_enabled():
         if st.session_state.get("recent_conversations") is None:
-            st.session_state.recent_conversations = db_action(list_conversations, st.session_state.db_user_id, 1000) or []
+            st.session_state.recent_conversations = cached_list_conversations(st.session_state.db_user_id, 1000) or []
         return st.session_state.recent_conversations[:limit]
 
     conversations = [
