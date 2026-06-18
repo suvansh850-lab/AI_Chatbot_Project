@@ -156,7 +156,10 @@ def db_action(action, *args, **kwargs):
     if not db_enabled():
         return None
     try:
-        return action(*args, **kwargs)
+        res = action(*args, **kwargs)
+        if action.__name__ in ("save_message", "create_conversation", "delete_conversation", "update_conversation", "clear_conversation_messages"):
+            st.session_state.recent_conversations = None
+        return res
     except Exception as ex:
         st.session_state.db_error = str(ex)
         return None
@@ -942,6 +945,8 @@ for key, default in [
     ("voice_response_tts_voice", "Alice"),
     ("voice_response_tts_provider", "Edge-TTS"),
     ("voice_search_stt_provider", "Gemini"),
+    ("recent_conversations", None),
+    ("google_credentials", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -2312,7 +2317,9 @@ def get_conversation_order(conversation):
 def get_recent_conversations(limit=1000):
     sync_active_conversation()
     if db_enabled():
-        return db_action(list_conversations, st.session_state.db_user_id, limit) or []
+        if st.session_state.get("recent_conversations") is None:
+            st.session_state.recent_conversations = db_action(list_conversations, st.session_state.db_user_id, 1000) or []
+        return st.session_state.recent_conversations[:limit]
 
     conversations = [
         conversation for conversation in st.session_state.conversations
@@ -2564,14 +2571,21 @@ def render_sidebar():
         # --- Google integration status and controls ---
         st.markdown('<div class="side-section-title">Google Integration</div>', unsafe_allow_html=True)
         
-        # Load Google Credentials
+        # Load Google Credentials (cached in session state)
         google_creds = st.session_state.get("google_credentials")
-        if db_enabled() and st.session_state.db_user_id:
-            from database import load_google_credentials
-            db_creds = db_action(load_google_credentials, st.session_state.db_user_id)
-            if db_creds:
-                google_creds = db_creds
-                st.session_state.google_credentials = db_creds
+        if google_creds is None:
+            if db_enabled() and st.session_state.db_user_id:
+                from database import load_google_credentials
+                db_creds = db_action(load_google_credentials, st.session_state.db_user_id)
+                if db_creds:
+                    google_creds = db_creds
+                    st.session_state.google_credentials = db_creds
+                else:
+                    st.session_state.google_credentials = False
+                    google_creds = False
+            else:
+                st.session_state.google_credentials = False
+                google_creds = False
 
         google_linked = bool(google_creds)
         if google_linked:
@@ -2584,7 +2598,7 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
             if st.button("Disconnect Google Account", key="disconnect_google_btn", use_container_width=True):
-                st.session_state.google_credentials = None
+                st.session_state.google_credentials = False
                 if db_enabled() and st.session_state.db_user_id:
                     from database import delete_google_credentials
                     db_action(delete_google_credentials, st.session_state.db_user_id)
@@ -3230,14 +3244,8 @@ if user_input:
             st.markdown(user_input)
 
         with st.chat_message("assistant"):
-            # Fetch Google token if user has connected their Google account
+            # Reuse the cached Google credentials from session state
             google_creds = st.session_state.get("google_credentials")
-            if db_enabled() and st.session_state.db_user_id:
-                from database import load_google_credentials
-                db_creds = db_action(load_google_credentials, st.session_state.db_user_id)
-                if db_creds:
-                    google_creds = db_creds
-                    st.session_state.google_credentials = db_creds
 
             access_token = None
             if google_creds:
