@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests
 
-from .config import OPENAI_API_KEY  # just to import config values
 import os
 # We will read CLIENT_ID and CLIENT_SECRET from environment
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
