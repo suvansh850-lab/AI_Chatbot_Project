@@ -27,6 +27,12 @@ def record_profiler_checkpoint(name):
     profiler_last_time = now
 
 
+def safe_fragment(func):
+    if hasattr(st, "fragment"):
+        return st.fragment()(func)
+    return func
+
+
 # --- Declare Google Drive Picker Component ---
 try:
     parent_dir = os.path.dirname(os.path.abspath(__file__))
@@ -2161,25 +2167,29 @@ def render_google_drive_upload():
             """, 
             unsafe_allow_html=True
         )
-        drive_link = st.text_input(
-            "Google Drive link",
-            placeholder="Paste a shared Google Drive link",
-            key="drive_share_link",
-        )
-        file_kind = st.selectbox(
-            "Drive file type",
-            ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
-            key="drive_file_kind",
-        )
-        if st.button("Import via Link", use_container_width=True):
-            try:
-                file_obj, filename, mime_type = download_drive_share_link(drive_link, file_kind)
-                attach_file_to_chat_context(file_obj, filename, mime_type)
-                st.session_state.drive_import_notice = f"Imported {filename} into the chatbot. Ask your next question in Chat."
-                st.success(f"Imported {filename} into the chatbot.")
-                st.rerun()
-            except Exception as ex:
-                st.error(f"Google Drive import error: {ex}")
+        @safe_fragment
+        def drive_link_paste_block():
+            drive_link = st.text_input(
+                "Google Drive link",
+                placeholder="Paste a shared Google Drive link",
+                key="drive_share_link",
+            )
+            file_kind = st.selectbox(
+                "Drive file type",
+                ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
+                key="drive_file_kind",
+            )
+            if st.button("Import via Link", use_container_width=True):
+                try:
+                    file_obj, filename, mime_type = download_drive_share_link(drive_link, file_kind)
+                    attach_file_to_chat_context(file_obj, filename, mime_type)
+                    st.session_state.drive_import_notice = f"Imported {filename} into the chatbot. Ask your next question in Chat."
+                    st.success(f"Imported {filename} into the chatbot.")
+                    st.rerun()
+                except Exception as ex:
+                    st.error(f"Google Drive import error: {ex}")
+                    
+        drive_link_paste_block()
 
 def start_new_chat():
     sync_active_conversation()
@@ -2742,21 +2752,26 @@ record_profiler_checkpoint("Sidebar Rendering")
 
 if st.session_state.selected_nav == "Search Chats":
     st.subheader("Search Chats")
-    query = st.text_input("Search chat history", placeholder="Type a keyword")
-    if query:
-        matches = [
-            msg for msg in st.session_state.cb_messages
-            if query.lower() in str(msg.get("content", "")).lower()
-        ]
-        if matches:
-            for msg in matches:
-                label = "You" if msg["role"] == "user" else "Assistant"
-                with st.expander(label):
-                    st.markdown(msg["content"])
+    
+    @safe_fragment
+    def search_chats_block():
+        query = st.text_input("Search chat history", placeholder="Type a keyword", key="search_chats_keyword")
+        if query:
+            matches = [
+                msg for msg in st.session_state.cb_messages
+                if query.lower() in str(msg.get("content", "")).lower()
+            ]
+            if matches:
+                for msg in matches:
+                    label = "You" if msg["role"] == "user" else "Assistant"
+                    with st.expander(label):
+                        st.markdown(msg["content"])
+            else:
+                st.info("No matching chats found.")
         else:
-            st.info("No matching chats found.")
-    else:
-        st.info("Type a keyword to search your current chat history.")
+            st.info("Type a keyword to search your current chat history.")
+            
+    search_chats_block()
     record_profiler_checkpoint("Search Chats View")
     st.stop()
 
