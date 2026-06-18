@@ -1971,7 +1971,11 @@ def render_document_library():
                                 data = json.loads(content_row["data_json"])
                                 df = pd.DataFrame(data)
                                 st.markdown("**Dataset Preview**")
-                                st.dataframe(df, use_container_width=True)
+                                if len(df) > 1000:
+                                    st.dataframe(df.head(1000), use_container_width=True)
+                                    st.caption(f"⚠️ Showing first 1,000 rows out of {len(df):,} total rows to prevent frontend lag.")
+                                else:
+                                    st.dataframe(df, use_container_width=True)
                             except Exception as ex:
                                 st.error(f"Error parsing dataset preview: {ex}")
                         else:
