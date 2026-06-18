@@ -1,13 +1,10 @@
 import os
 import streamlit as st
-import pandas as pd
 import io, datetime
 import re
 import urllib.request
 from audio_recorder_streamlit import audio_recorder
-import plotly.express as px
 import base64
-from PIL import Image
 import requests
 import streamlit.components.v1 as components
 
@@ -996,6 +993,7 @@ def handle_upload(active_type):
         st.session_state.ai_insights_narrative = ""
 
 def load_dataframe_from_file(file_obj, filename):
+    import pandas as pd
     name = filename.lower()
     
     # Ensure file pointer is at the beginning
@@ -1118,6 +1116,7 @@ def auto_detect_columns(df):
     return mapping
 
 def clean_numeric_column(df, col):
+    import pandas as pd
     if not col or col not in df.columns:
         return pd.Series(0.0, index=df.index)
     series_str = df[col].astype(str)
@@ -1223,6 +1222,7 @@ def ask_llm(prompt: str) -> str:
     return ""
 
 def auto_generate_insights():
+    import pandas as pd
     if st.session_state.cb_df is None:
         st.session_state.ai_insights_narrative = ""
         return
@@ -1513,6 +1513,7 @@ def download_drive_share_link(link_or_id, file_kind):
     return io.BytesIO(data), filename, mime_type
 
 def render_data_analysis():
+    import pandas as pd
     col1, col2 = st.columns([9, 1])
     with col1:
         st.subheader("Data Analysis Workspace")
@@ -1649,6 +1650,7 @@ def find_in_memory_content(item):
                 return {"text_content": conv.get("cb_file_text")}
     return None
 def restore_file_to_chat(item):
+    import pandas as pd
     ftype = item["file_type"]
     filename = item["filename"]
     
@@ -1756,6 +1758,7 @@ def delete_file_record(item):
 
 
 def render_document_library():
+    import pandas as pd
     col1, col2 = st.columns([9, 1])
     with col1:
         st.subheader("Document & File Library")
@@ -2994,6 +2997,7 @@ with chat_box:
             else:
                 if msg.get("img"):
                     try:
+                        from PIL import Image
                         st.image(Image.open(io.BytesIO(msg["img"])), width=260)
                     except Exception:
                         pass
@@ -3295,6 +3299,7 @@ if user_input:
         with st.chat_message("user"):
             if i_bytes:
                 try:
+                    from PIL import Image
                     st.image(Image.open(io.BytesIO(i_bytes)), width=260)
                 except Exception:
                     pass
