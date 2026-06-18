@@ -771,7 +771,6 @@ if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLI
     auth_code = st.query_params.get("code")
     state = st.query_params.get("state")
     if auth_code:
-        st.info("Processing Google login...", icon="🔐")
         with st.spinner("Logging in with Google..."):
             try:
                 # 1. Exchange authorization code for access token
