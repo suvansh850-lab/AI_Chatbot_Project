@@ -41,8 +41,8 @@ def health_check():
 
 @app.get("/models/{provider}", response_model=ModelsResponse)
 def models(provider: str):
-    if provider not in {"Gemini", "ChatGPT", "OpenRouter", "Groq"}:
-        raise HTTPException(status_code=400, detail="Provider must be Gemini, ChatGPT, OpenRouter, or Groq.")
+    if provider not in {"Gemini", "Groq"}:
+        raise HTTPException(status_code=400, detail="Provider must be Gemini or Groq.")
     return get_active_model(provider)
 
 

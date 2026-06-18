@@ -5,10 +5,6 @@ import base64
 from .config import (
     GEMINI_API_KEY,
     GEMINI_MODEL_PRIORITY,
-    OPENAI_API_KEY,
-    OPENAI_MODEL_PRIORITY,
-    OPENROUTER_API_KEY,
-    OPENROUTER_MODEL_PRIORITY,
     GROQ_API_KEY,
     GROQ_MODEL_PRIORITY,
 )
@@ -76,42 +72,6 @@ def get_available_gemini_models() -> list[str]:
     return sorted(set(available))
 
 
-def get_available_openai_models() -> list[str]:
-    if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-        return []
-
-    OpenAI = import_openai_client()
-    if OpenAI is None:
-        return []
-
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    compatible_prefixes = ("gpt-4o", "gpt-4.1", "gpt-3.5-turbo")
-    model_ids = [model.id for model in client.models.list().data]
-    return sorted({model_id for model_id in model_ids if model_id.startswith(compatible_prefixes)})
-
-
-def get_available_openrouter_models() -> list[str]:
-    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY_HERE":
-        return []
-
-    OpenAI = import_openai_client()
-    if OpenAI is None:
-        return []
-
-    try:
-        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
-        model_ids = [model.id for model in client.models.list().data]
-        priority_prefixes = ("meta-llama/", "google/", "qwen/", "mistralai/", "deepseek/", "anthropic/", "openai/")
-        filtered = {model_id for model_id in model_ids if any(model_id.startswith(p) for p in priority_prefixes) or ":free" in model_id}
-        return sorted(filtered)
-    except Exception:
-        return [
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "google/gemma-2-9b-it:free",
-            "qwen/qwen-2.5-72b-instruct:free",
-            "deepseek/deepseek-chat"
-        ]
-
 
 def get_available_groq_models() -> list[str]:
     if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
@@ -147,19 +107,12 @@ def get_active_model(provider: str) -> ModelsResponse:
             active = choose_available_model(available, GEMINI_MODEL_PRIORITY)
             return ModelsResponse(provider=provider, active_model=active, available_models=available)
 
-        if provider == "OpenRouter":
-            available = get_available_openrouter_models()
-            active = choose_available_model(available, OPENROUTER_MODEL_PRIORITY)
-            return ModelsResponse(provider=provider, active_model=active, available_models=available)
-
         if provider == "Groq":
             available = get_available_groq_models()
             active = choose_available_model(available, GROQ_MODEL_PRIORITY)
             return ModelsResponse(provider=provider, active_model=active, available_models=available)
 
-        available = get_available_openai_models()
-        active = choose_available_model(available, OPENAI_MODEL_PRIORITY)
-        return ModelsResponse(provider=provider, active_model=active, available_models=available)
+        raise ValueError(f"Unknown or unsupported provider: {provider}")
     except Exception as ex:
         return ModelsResponse(provider=provider, active_model="", available_models=[], error=str(ex))
 
@@ -308,24 +261,14 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
         except Exception:
             pass
 
-    if request.provider in ("ChatGPT", "OpenRouter", "Groq"):
+    if request.provider == "Groq":
         OpenAI = import_openai_client()
         if OpenAI is None:
             raise RuntimeError("Install the OpenAI package first: pip install openai")
 
-        # Get appropriate client
-        if request.provider == "ChatGPT":
-            if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-                raise RuntimeError("Add your OpenAI API key to use ChatGPT.")
-            client = OpenAI(api_key=OPENAI_API_KEY)
-        elif request.provider == "OpenRouter":
-            if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY_HERE":
-                raise RuntimeError("Add your OpenRouter API key to use OpenRouter.")
-            client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
-        else: # Groq
-            if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
-                raise RuntimeError("Add your Groq API key to use Groq.")
-            client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+        if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
+            raise RuntimeError("Add your Groq API key to use Groq.")
+        client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
 
         messages = build_openai_messages(combined_messages, current_text, request, sys_prompt)
 
@@ -477,38 +420,6 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
 
 
 def transcribe_audio(audio_base64: str, mime_type: str, provider: str = "Gemini") -> tuple[str, str]:
-    if provider.lower() == "whisper":
-        OpenAI = import_openai_client()
-        if OpenAI is None:
-            raise RuntimeError("Install the OpenAI package first: pip install openai")
-        if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-            raise RuntimeError("Add your OpenAI API key to use Whisper.")
-
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        
-        # Determine extension from mime_type to assist OpenAI's parser
-        ext = "wav"
-        if mime_type:
-            if "mpeg" in mime_type or "mp3" in mime_type:
-                ext = "mp3"
-            elif "webm" in mime_type:
-                ext = "webm"
-            elif "ogg" in mime_type:
-                ext = "ogg"
-            elif "wav" in mime_type:
-                ext = "wav"
-        
-        from io import BytesIO
-        audio_data = base64.b64decode(audio_base64)
-        audio_file = BytesIO(audio_data)
-        audio_file.name = f"audio.{ext}"
-        
-        response = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file
-        )
-        return "whisper-1", response.text
-
     # Default to Gemini
     model_info = get_active_model("Gemini")
     if model_info.error:

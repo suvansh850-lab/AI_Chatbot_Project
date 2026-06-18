@@ -12,7 +12,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
-    provider: Literal["Gemini", "ChatGPT", "OpenRouter", "Groq"] = "Gemini"
+    provider: Literal["Gemini", "Groq"] = "Gemini"
     conversation_id: int | None = None
     messages: list[ChatMessage] = Field(default_factory=list)
     document_text: str = ""
@@ -38,7 +38,7 @@ class ModelsResponse(BaseModel):
 class TranscriptionRequest(BaseModel):
     audio_base64: str = Field(..., min_length=1)
     mime_type: str = "audio/wav"
-    provider: str = "Gemini"  # "Gemini" or "Whisper"
+    provider: str = "Gemini"  # "Gemini" only
 
 
 class TranscriptionResponse(BaseModel):
@@ -48,9 +48,9 @@ class TranscriptionResponse(BaseModel):
 
 class SpeechSynthesisRequest(BaseModel):
     text: str = Field(..., min_length=1)
-    voice: str = "Alice"  # ElevenLabs default voice
-    model: str = "eleven_multilingual_v2"
-    provider: str = "ElevenLabs"
+    voice: str = "Alice"  # Default neural voice
+    model: str = ""
+    provider: str = "Edge-TTS"
     api_key: str | None = None
 
 

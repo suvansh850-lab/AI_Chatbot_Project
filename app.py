@@ -63,20 +63,8 @@ def get_secret(key, default=""):
     return os.getenv(key, default)
 
 GEMINI_API_KEY = get_secret("GEMINI_API_KEY", "")
-OPENAI_API_KEY = get_secret("OPENAI_API_KEY", "")
-OPENROUTER_API_KEY = get_secret("OPENROUTER_API_KEY", "")
 GROQ_API_KEY = get_secret("GROQ_API_KEY", "")
 
-def get_openai_api_key():
-    return OPENAI_API_KEY # edge-tts doesn't need an API key
-
-
-OPENROUTER_MODEL_PRIORITY = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-2-9b-it:free",
-    "qwen/qwen-2.5-72b-instruct:free",
-    "deepseek/deepseek-chat",
-]
 
 GROQ_MODEL_PRIORITY = [
     "llama-3.3-70b-versatile",
@@ -929,8 +917,6 @@ for key, default in [
     ("cb_df_name", ""),
     ("llm_provider", "Gemini"),
     ("active_model_name", ""),
-    ("openai_model", "gpt-4o-mini"),
-    ("openrouter_model", "meta-llama/llama-3.3-70b-instruct:free"),
     ("groq_model", "llama-3.3-70b-versatile"),
     ("up_keys", {"doc": 0, "img": 0, "data": 0}),
     ("last_audio_bytes", None),
@@ -954,7 +940,6 @@ for key, default in [
     ("username", ""),
     ("voice_response_enabled", False),
     ("voice_response_tts_voice", "Alice"),
-    ("voice_response_tts_model", "eleven_multilingual_v2"),
     ("voice_response_tts_provider", "Edge-TTS"),
     ("voice_search_stt_provider", "Gemini"),
 ]:
@@ -1183,10 +1168,6 @@ def ask_llm(prompt: str) -> str:
     if not active_model:
         if active_provider == "Gemini":
             active_model = st.session_state.get("cb_model") or "gemini-1.5-flash"
-        elif active_provider == "ChatGPT":
-            active_model = st.session_state.get("openai_model") or "gpt-4o-mini"
-        elif active_provider == "OpenRouter":
-            active_model = st.session_state.get("openrouter_model") or "meta-llama/llama-3.3-70b-instruct:free"
         elif active_provider == "Groq":
             active_model = st.session_state.get("groq_model") or "llama-3.3-70b-versatile"
         else:
@@ -1200,26 +1181,6 @@ def ask_llm(prompt: str) -> str:
             model = genai.GenerativeModel(active_model)
             resp = model.generate_content(prompt)
             return resp.text
-        elif active_provider == "ChatGPT":
-            from openai import OpenAI
-            if not OPENAI_API_KEY or OPENAI_API_KEY == "YOUR_OPENAI_API_KEY_HERE":
-                return "Please configure your OpenAI API Key in Chat."
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            resp = client.chat.completions.create(
-                model=active_model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return resp.choices[0].message.content or ""
-        elif active_provider == "OpenRouter":
-            from openai import OpenAI
-            if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY_HERE":
-                return "Please configure your OpenRouter API Key in Chat."
-            client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
-            resp = client.chat.completions.create(
-                model=active_model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return resp.choices[0].message.content or ""
         elif active_provider == "Groq":
             from openai import OpenAI
             if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
@@ -2365,10 +2326,6 @@ def is_vision_model(provider, model):
     model_l = model.lower()
     if provider == "Gemini":
         return True  # All Gemini models generally support vision or we assume they do
-    if provider == "ChatGPT":
-        return "gpt-4o" in model_l or "vision" in model_l or "gpt-4" in model_l
-    if provider == "OpenRouter":
-        return "vision" in model_l or "gpt-4o" in model_l or "claude-3" in model_l or "gemini" in model_l
     if provider == "Groq":
         return "vision" in model_l or "llama-3.2" in model_l
     return False
@@ -2401,18 +2358,6 @@ MODEL_OPTIONS = {
         "provider": "Gemini",
         "pill": "Gemini",
     },
-    "ChatGPT": {
-        "title": "ChatGPT",
-        "subtitle": "Auto-selects an available OpenAI model for your key",
-        "provider": "ChatGPT",
-        "pill": "ChatGPT",
-    },
-    "OpenRouter": {
-        "title": "OpenRouter",
-        "subtitle": "Auto-selects an available OpenRouter model for your key",
-        "provider": "OpenRouter",
-        "pill": "OpenRouter",
-    },
     "Groq": {
         "title": "Groq",
         "subtitle": "Auto-selects an available Groq model for your key",
@@ -2427,45 +2372,6 @@ GEMINI_MODEL_PRIORITY = [
     "gemini-1.5-flash",
     "gemini-1.5-pro",
 ]
-
-OPENAI_MODEL_PRIORITY = [
-    "gpt-4o-mini",
-    "gpt-4o",
-    "gpt-4.1-mini",
-    "gpt-4.1",
-    "gpt-3.5-turbo",
-]
-
-OPENROUTER_MODEL_PRIORITY = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-2-9b-it:free",
-    "qwen/qwen-2.5-72b-instruct:free",
-    "deepseek/deepseek-chat",
-]
-
-@st.cache_data(show_spinner=False, ttl=3600)
-def get_available_openrouter_models(api_key):
-    if not api_key or api_key == "YOUR_OPENROUTER_API_KEY_HERE":
-        return []
-
-    OpenAI = import_openai_client()
-    if OpenAI is None:
-        return []
-
-    try:
-        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-        model_ids = [model.id for model in client.models.list().data]
-        priority_prefixes = ("meta-llama/", "google/", "qwen/", "mistralai/", "deepseek/", "anthropic/", "openai/")
-        filtered = {model_id for model_id in model_ids if any(model_id.startswith(p) for p in priority_prefixes) or ":free" in model_id}
-        return sorted(filtered)
-    except Exception:
-        return [
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "google/gemma-2-9b-it:free",
-            "qwen/qwen-2.5-72b-instruct:free",
-            "deepseek/deepseek-chat"
-        ]
-
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def get_available_groq_models(api_key):
@@ -2515,27 +2421,6 @@ def get_available_gemini_models(api_key):
             "gemini-1.5-pro",
         ]
 
-@st.cache_data(show_spinner=False, ttl=3600)
-def get_available_openai_models(api_key):
-    if not api_key or api_key == "YOUR_OPENAI_API_KEY_HERE":
-        return []
-
-    OpenAI = import_openai_client()
-    if OpenAI is None:
-        return []
-
-    try:
-        client = OpenAI(api_key=api_key)
-        model_ids = [model.id for model in client.models.list().data]
-        compatible_prefixes = ("gpt-4o", "gpt-4.1", "gpt-3.5-turbo")
-        return sorted({model_id for model_id in model_ids if model_id.startswith(compatible_prefixes)})
-    except Exception:
-        return [
-            "gpt-4o-mini",
-            "gpt-4o",
-            "gpt-3.5-turbo",
-        ]
-
 def choose_available_model(available_models, preferred_models):
     if not available_models:
         return ""
@@ -2552,16 +2437,11 @@ def get_active_model(provider):
             available = get_available_gemini_models(GEMINI_API_KEY)
             return choose_available_model(available, GEMINI_MODEL_PRIORITY), available, ""
 
-        if provider == "OpenRouter":
-            available = get_available_openrouter_models(OPENROUTER_API_KEY)
-            return choose_available_model(available, OPENROUTER_MODEL_PRIORITY), available, ""
-
         if provider == "Groq":
             available = get_available_groq_models(GROQ_API_KEY)
             return choose_available_model(available, GROQ_MODEL_PRIORITY), available, ""
 
-        available = get_available_openai_models(get_openai_api_key())
-        return choose_available_model(available, OPENAI_MODEL_PRIORITY), available, ""
+        raise ValueError(f"Unknown or unsupported provider: {provider}")
     except Exception as ex:
         return "", [], str(ex)
 
@@ -2582,12 +2462,8 @@ def render_model_picker():
     st.session_state.active_model_name = active_model
     if selected["provider"] == "Gemini":
         st.session_state.cb_model = active_model
-    elif selected["provider"] == "OpenRouter":
-        st.session_state.openrouter_model = active_model
     elif selected["provider"] == "Groq":
         st.session_state.groq_model = active_model
-    else:
-        st.session_state.openai_model = active_model
 
     _, search_toggle_col, picker_col = st.columns([3.8, 1.6, 1.6])
     with search_toggle_col:
@@ -3143,7 +3019,7 @@ with chat_box:
 # --- chat input ---
 render_model_picker()
 provider = st.session_state.llm_provider
-model_name = st.session_state.cb_model if provider == "Gemini" else (st.session_state.openrouter_model if provider == "OpenRouter" else (st.session_state.groq_model if provider == "Groq" else st.session_state.openai_model))
+model_name = st.session_state.cb_model if provider == "Gemini" else st.session_state.groq_model
 typed = st.chat_input("Ask me anything...", accept_file="multiple", file_type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"])
 
 st.markdown('<div class="voice-search-label">Voice Search</div>', unsafe_allow_html=True)
@@ -3153,43 +3029,19 @@ audio_bytes = audio_recorder(text="", recording_color="#ef4444", neutral_color="
 if audio_bytes and st.session_state.last_audio_bytes != audio_bytes:
     st.session_state.last_audio_bytes = audio_bytes
     try:
-        provider = st.session_state.get("voice_search_stt_provider", "Gemini")
-        if provider == "Whisper":
-            OpenAI = import_openai_client()
-            if OpenAI is None:
-                st.error("Install the OpenAI package first: pip install openai")
-                st.stop()
-            api_key = get_openai_api_key()
-            if not api_key or api_key == "YOUR_OPENAI_API_KEY_HERE":
-                st.error("Add your OpenAI API key to use Whisper transcription.")
-                st.stop()
-            
-            client = OpenAI(api_key=api_key)
-            from io import BytesIO
-            audio_file = BytesIO(audio_bytes)
-            audio_file.name = "audio.wav"
-            
-            with st.spinner("Transcribing with Whisper..."):
-                response = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file
-                )
-                transcribed_text = response.text
-                voice_model_used = "whisper-1"
-        else:
-            voice_model_used, voice_model_error = get_voice_transcription_model()
-            if not voice_model_used:
-                st.error(f"Voice transcription error: {voice_model_error}")
-                st.stop()
-            
-            with st.spinner("Transcribing with Gemini..."):
-                audio_model = genai.GenerativeModel(voice_model_used)
-                audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
-                resp = audio_model.generate_content([
-                    "Please accurately transcribe this audio into text. Output only the transcription, nothing else.", 
-                    audio_part
-                ])
-                transcribed_text = resp.text
+        voice_model_used, voice_model_error = get_voice_transcription_model()
+        if not voice_model_used:
+            st.error(f"Voice transcription error: {voice_model_error}")
+            st.stop()
+        
+        with st.spinner("Transcribing with Gemini..."):
+            audio_model = genai.GenerativeModel(voice_model_used)
+            audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
+            resp = audio_model.generate_content([
+                "Please accurately transcribe this audio into text. Output only the transcription, nothing else.", 
+                audio_part
+            ])
+            transcribed_text = resp.text
 
         st.session_state.voice_prompt = transcribed_text
         if db_enabled():
@@ -3420,7 +3272,7 @@ if user_input:
 
             is_vision = is_vision_model(provider, model_name)
             if i_bytes and not is_vision:
-                st.warning(f"⚠️ The selected model **{model_name}** ({provider}) does not support image analysis. The query will be processed as text-only. Switch to Gemini or a ChatGPT/Groq vision model to analyze the image.")
+                st.warning(f"⚠️ The selected model **{model_name}** ({provider}) does not support image analysis. The query will be processed as text-only. Switch to Gemini or a Groq vision model to analyze the image.")
 
             try:
                 # Setup Google tools schema for OpenAI-compatible paths
@@ -3479,28 +3331,16 @@ if user_input:
                         }
                     ]
 
-                if provider in ("ChatGPT", "OpenRouter", "Groq"):
+                if provider == "Groq":
                     OpenAI = import_openai_client()
                     if OpenAI is None:
                         st.error("Install the OpenAI package first: pip install openai")
                         st.stop()
 
-                    if provider == "ChatGPT":
-                        api_key = get_openai_api_key()
-                        if not api_key or api_key == "YOUR_OPENAI_API_KEY_HERE":
-                            st.error("Add your OpenAI API key to use ChatGPT.")
-                            st.stop()
-                        client = OpenAI(api_key=api_key)
-                    elif provider == "OpenRouter":
-                        if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY_HERE":
-                            st.error("Add your OpenRouter API key in App.py to use OpenRouter.")
-                            st.stop()
-                        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_API_KEY)
-                    else: # Groq
-                        if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
-                            st.error("Add your Groq API key in App.py to use Groq.")
-                            st.stop()
-                        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+                    if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
+                        st.error("Add your Groq API key in App.py to use Groq.")
+                        st.stop()
+                    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
 
                     if not model_name:
                         st.error(f"No compatible {provider} model was found for this API key.")
