@@ -524,7 +524,7 @@ def get_connection_pool():
             params = get_mysql_connect_params(DB_CONNECT_TIMEOUT)
             _connection_pool = mysql.connector.pooling.MySQLConnectionPool(
                 pool_name="ai_chatbot_pool",
-                pool_size=10,
+                pool_size=3,
                 **params
             )
         except Exception:
@@ -549,6 +549,14 @@ def database_connection():
 def reconnect_connection(conn):
     if USE_SQLITE or conn is None:
         return conn
+    
+    # If already connected, return immediately to bypass a slow network round-trip ping
+    try:
+        if conn.is_connected():
+            return conn
+    except Exception:
+        pass
+
     try:
         # Ping the server and attempt to reconnect if the connection has timed out or closed
         conn.ping(reconnect=True, attempts=DB_RECONNECT_ATTEMPTS, delay=DB_RECONNECT_DELAY)
