@@ -968,6 +968,7 @@ for key, default in [
     ("recent_conversations", None),
     ("google_credentials", None),
     ("processed_files", {}),
+    ("chats_limit", 30),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -2556,11 +2557,14 @@ def render_sidebar():
                     st.info("No chats to delete.")
 
         st.markdown('<div class="side-section-title">Recents</div>', unsafe_allow_html=True)
-        recent_conversations = get_recent_conversations()
+        # Fetch only up to current limit for displaying
+        recent_conversations = get_recent_conversations(limit=st.session_state.chats_limit)
         
         search_query = st.text_input("Search chats", key="chat_search", label_visibility="collapsed", placeholder="Search chats...")
         if search_query:
-            recent_conversations = [c for c in recent_conversations if search_query.lower() in c["title"].lower()]
+            # For search query, search all conversations (up to 1000)
+            all_recent = get_recent_conversations(limit=1000)
+            recent_conversations = [c for c in all_recent if search_query.lower() in c["title"].lower()]
             
         if recent_conversations:
             recents_container = st.container(height=260, border=False)
@@ -2568,6 +2572,20 @@ def render_sidebar():
                 for conversation in recent_conversations:
                     if st.button(conversation["title"], key=f'recent_{conversation["id"]}', use_container_width=True):
                         load_conversation(conversation["id"])
+                        st.rerun()
+                
+                # Render "Load More" button if there are more chats to display
+                total_available = 0
+                if db_enabled():
+                    all_cached = st.session_state.get("recent_conversations")
+                    if all_cached:
+                        total_available = len(all_cached)
+                else:
+                    total_available = len([c for c in st.session_state.conversations if c.get("messages")])
+                
+                if total_available > st.session_state.chats_limit and not search_query:
+                    if st.button("Load More ➕", key="load_more_chats", use_container_width=True):
+                        st.session_state.chats_limit += 30
                         st.rerun()
         else:
             if search_query:
