@@ -586,30 +586,6 @@ div[data-testid="stForm"] button:hover {
     align-items: center;
     gap: 8px;
 }
-
-/* Premium Chat Form styling */
-[data-testid="stForm"] {
-    border: 1px solid #e5e3d9 !important;
-    background-color: #fcfbf9 !important;
-    border-radius: 14px !important;
-    padding: 20px !important;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.02) !important;
-    margin-top: 15px !important;
-}
-
-[data-testid="stFormSubmitButton"] button {
-    background-color: #da7756 !important;
-    color: white !important;
-    font-weight: 700 !important;
-    border-radius: 8px !important;
-    border: 1px solid #da7756 !important;
-    height: 38px !important;
-}
-
-[data-testid="stFormSubmitButton"] button:hover {
-    background-color: #c56241 !important;
-    border-color: #c56241 !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2185,20 +2161,17 @@ def render_google_drive_upload():
             """, 
             unsafe_allow_html=True
         )
-        with st.form("gdrive_link_form", clear_on_submit=True):
-            drive_link = st.text_input(
-                "Google Drive link",
-                placeholder="Paste a shared Google Drive link",
-                key="drive_share_link",
-            )
-            file_kind = st.selectbox(
-                "Drive file type",
-                ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
-                key="drive_file_kind",
-            )
-            import_clicked = st.form_submit_button("Import via Link", use_container_width=True)
-
-        if import_clicked:
+        drive_link = st.text_input(
+            "Google Drive link",
+            placeholder="Paste a shared Google Drive link",
+            key="drive_share_link",
+        )
+        file_kind = st.selectbox(
+            "Drive file type",
+            ["Google Sheet", "Google Doc", "Google Slides", "XLSX", "XLS", "CSV", "PDF", "Text", "Word document", "PPTX", "PNG", "JPG/JPEG", "WEBP"],
+            key="drive_file_kind",
+        )
+        if st.button("Import via Link", use_container_width=True):
             try:
                 file_obj, filename, mime_type = download_drive_share_link(drive_link, file_kind)
                 attach_file_to_chat_context(file_obj, filename, mime_type)
@@ -2769,11 +2742,8 @@ record_profiler_checkpoint("Sidebar Rendering")
 
 if st.session_state.selected_nav == "Search Chats":
     st.subheader("Search Chats")
-    with st.form("search_chats_form", clear_on_submit=False):
-        query = st.text_input("Search chat history", placeholder="Type a keyword")
-        search_clicked = st.form_submit_button("Search 🔍", use_container_width=True)
-        
-    if search_clicked and query:
+    query = st.text_input("Search chat history", placeholder="Type a keyword")
+    if query:
         matches = [
             msg for msg in st.session_state.cb_messages
             if query.lower() in str(msg.get("content", "")).lower()
@@ -2785,10 +2755,8 @@ if st.session_state.selected_nav == "Search Chats":
                     st.markdown(msg["content"])
         else:
             st.info("No matching chats found.")
-    elif search_clicked:
-        st.info("Type a keyword to search your current chat history.")
     else:
-        st.info("Use the search bar above to query message history.")
+        st.info("Type a keyword to search your current chat history.")
     record_profiler_checkpoint("Search Chats View")
     st.stop()
 
