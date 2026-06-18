@@ -2505,18 +2505,10 @@ def get_active_model(provider):
         return "", [], str(ex)
 
 def get_voice_transcription_model():
-    """Returns (model_name, provider, error). Provider is 'Gemini' or 'Groq'."""
-    active_provider = st.session_state.get("llm_provider", "Gemini")
-    provider = MODEL_OPTIONS.get(active_provider, {}).get("provider", "Gemini")
-    if provider == "Groq":
-        if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
-            return "", "Groq", "Groq API key not configured. Please add your GROQ_API_KEY."
-        return "whisper-large-v3-turbo", "Groq", ""
-    # Default: Gemini
     active_model, _, model_error = get_active_model("Gemini")
     if active_model:
-        return active_model, "Gemini", ""
-    return "", "Gemini", model_error or "No compatible Gemini model was found for voice transcription."
+        return active_model, ""
+    return "", model_error or "No compatible Gemini model was found for voice transcription."
 
 def render_model_picker():
     selected_key = st.session_state.llm_provider
@@ -3138,32 +3130,19 @@ audio_bytes = audio_recorder(text="", recording_color="#ef4444", neutral_color="
 if audio_bytes and st.session_state.last_audio_bytes != audio_bytes:
     st.session_state.last_audio_bytes = audio_bytes
     try:
-        voice_model_used, voice_provider, voice_model_error = get_voice_transcription_model()
+        voice_model_used, voice_model_error = get_voice_transcription_model()
         if not voice_model_used:
             st.error(f"Voice transcription error: {voice_model_error}")
             st.stop()
 
-        if voice_provider == "Groq":
-            with st.spinner("Transcribing with Groq Whisper..."):
-                import io
-                groq_client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
-                audio_file = io.BytesIO(audio_bytes)
-                audio_file.name = "audio.wav"
-                resp = groq_client.audio.transcriptions.create(
-                    model=voice_model_used,
-                    file=audio_file,
-                    response_format="text"
-                )
-                transcribed_text = resp if isinstance(resp, str) else resp.text
-        else:
-            with st.spinner("Transcribing with Gemini..."):
-                audio_model = genai.GenerativeModel(voice_model_used)
-                audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
-                resp = audio_model.generate_content([
-                    "Please accurately transcribe this audio into text. Output only the transcription, nothing else.",
-                    audio_part
-                ])
-                transcribed_text = resp.text
+        with st.spinner("Transcribing..."):
+            audio_model = genai.GenerativeModel(voice_model_used)
+            audio_part = {"mime_type": "audio/wav", "data": audio_bytes}
+            resp = audio_model.generate_content([
+                "Please accurately transcribe this audio into text. Output only the transcription, nothing else.",
+                audio_part
+            ])
+            transcribed_text = resp.text
 
         st.session_state.voice_prompt = transcribed_text
         if db_enabled():
