@@ -335,7 +335,7 @@ div[data-testid="stChatInput"] {
 iframe[title="audio_recorder_streamlit.audio_recorder"] {
     position: fixed !important;
     bottom: 6px !important;
-    right: calc(5rem + 105px) !important;
+    right: calc(5rem + 65px) !important;
     width: 34px !important;
     height: 34px !important;
     background: #faf8f5 !important;
@@ -349,7 +349,7 @@ iframe[title="audio_recorder_streamlit.audio_recorder"] {
 }
 @media (max-width: 768px) {
     iframe[title="audio_recorder_streamlit.audio_recorder"] {
-        right: calc(1rem + 105px) !important;
+        right: calc(1rem + 65px) !important;
         bottom: 6px !important;
     }
 }
@@ -363,7 +363,7 @@ iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
 .voice-search-label {
     position: fixed !important;
     bottom: 14px !important;
-    right: calc(5rem + 147px) !important;
+    right: calc(5rem + 107px) !important;
     font-size: 0.82rem !important;
     font-weight: 600 !important;
     color: #da7756 !important;
@@ -372,7 +372,7 @@ iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
 }
 @media (max-width: 768px) {
     .voice-search-label {
-        right: calc(1rem + 147px) !important;
+        right: calc(1rem + 107px) !important;
         bottom: 14px !important;
     }
 }
