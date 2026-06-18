@@ -947,6 +947,7 @@ for key, default in [
     ("voice_search_stt_provider", "Gemini"),
     ("recent_conversations", None),
     ("google_credentials", None),
+    ("processed_files", {}),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -3084,55 +3085,79 @@ if typed:
         for f in typed.files:
             name = f.name.lower()
             processed = False
-            if name.endswith('.pdf'):
-                try:
-                    from pdfminer3.layout import LAParams
-                    from pdfminer3.pdfpage import PDFPage
-                    from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
-                    from pdfminer3.converter import TextConverter
-
-                    rm = PDFResourceManager()
-                    sio = io.StringIO()
-                    cv = TextConverter(rm, sio, laparams=LAParams())
-                    pi = PDFPageInterpreter(rm, cv)
-                    for pg in PDFPage.get_pages(io.BytesIO(f.read()), caching=True, check_extractable=True):
-                        pi.process_page(pg)
-                    st.session_state.cb_file_text = sio.getvalue()
-                    cv.close(); sio.close()
-                    processed = True
-                except Exception as ex:
-                    st.error(f"PDF error: {ex}")
-            elif name.endswith('.txt'):
-                st.session_state.cb_file_text = f.read().decode("utf-8", errors="ignore")
-                processed = True
-            elif name.endswith('.doc') or name.endswith('.docx'):
-                try:
-                    import docx2txt
-                    st.session_state.cb_file_text = docx2txt.process(f)
-                    processed = True
-                except Exception as ex:
-                    st.error(f"Word document error: {ex}")
-            elif name.endswith('.pptx'):
-                try:
-                    st.session_state.cb_file_text = extract_pptx_text(f)
-                    processed = True
-                except Exception as ex:
-                    st.error(f"PowerPoint error: {ex}")
-            elif name.endswith(('.csv', '.xlsx', '.xlsm', '.xls')):
-                try:
-                    st.session_state.cb_df = load_dataframe_from_file(f, f.name)
+            
+            f_size = getattr(f, "size", 0)
+            cache_key = f"{f.name}_{f_size}"
+            
+            # Check if file has already been processed in the current session
+            if cache_key in st.session_state.processed_files:
+                cached = st.session_state.processed_files[cache_key]
+                if name.endswith('.pdf') or name.endswith('.txt') or name.endswith('.doc') or name.endswith('.docx') or name.endswith('.pptx'):
+                    st.session_state.cb_file_text = cached
+                elif name.endswith(('.csv', '.xlsx', '.xlsm', '.xls')):
+                    st.session_state.cb_df = cached
                     st.session_state.cb_df_name = f.name
-                    processed = True
-                    # Auto-generate insights narrative
-                    with st.spinner("AI Business Advisor is reviewing your financials..."):
-                        auto_generate_insights()
-                except Exception as ex:
-                    st.error(f"Dataset upload error: {ex}")
-            elif name.endswith(('.png', '.jpg', '.jpeg', '.webp')):
-                raw = f.read()
-                st.session_state.cb_img_bytes = raw
-                st.session_state.cb_img_mime = f.type
+                elif name.endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    st.session_state.cb_img_bytes = cached["bytes"]
+                    st.session_state.cb_img_mime = cached["mime"]
                 processed = True
+            else:
+                if name.endswith('.pdf'):
+                    try:
+                        from pdfminer3.layout import LAParams
+                        from pdfminer3.pdfpage import PDFPage
+                        from pdfminer3.pdfinterp import PDFResourceManager, PDFPageInterpreter
+                        from pdfminer3.converter import TextConverter
+
+                        rm = PDFResourceManager()
+                        sio = io.StringIO()
+                        cv = TextConverter(rm, sio, laparams=LAParams())
+                        pi = PDFPageInterpreter(rm, cv)
+                        for pg in PDFPage.get_pages(io.BytesIO(f.read()), caching=True, check_extractable=True):
+                            pi.process_page(pg)
+                        st.session_state.cb_file_text = sio.getvalue()
+                        cv.close(); sio.close()
+                        processed = True
+                        st.session_state.processed_files[cache_key] = st.session_state.cb_file_text
+                    except Exception as ex:
+                        st.error(f"PDF error: {ex}")
+                elif name.endswith('.txt'):
+                    st.session_state.cb_file_text = f.read().decode("utf-8", errors="ignore")
+                    processed = True
+                    st.session_state.processed_files[cache_key] = st.session_state.cb_file_text
+                elif name.endswith('.doc') or name.endswith('.docx'):
+                    try:
+                        import docx2txt
+                        st.session_state.cb_file_text = docx2txt.process(f)
+                        processed = True
+                        st.session_state.processed_files[cache_key] = st.session_state.cb_file_text
+                    except Exception as ex:
+                        st.error(f"Word document error: {ex}")
+                elif name.endswith('.pptx'):
+                    try:
+                        st.session_state.cb_file_text = extract_pptx_text(f)
+                        processed = True
+                        st.session_state.processed_files[cache_key] = st.session_state.cb_file_text
+                    except Exception as ex:
+                        st.error(f"PowerPoint error: {ex}")
+                elif name.endswith(('.csv', '.xlsx', '.xlsm', '.xls')):
+                    try:
+                        st.session_state.cb_df = load_dataframe_from_file(f, f.name)
+                        st.session_state.cb_df_name = f.name
+                        processed = True
+                        st.session_state.processed_files[cache_key] = st.session_state.cb_df
+                        # Auto-generate insights narrative
+                        with st.spinner("AI Business Advisor is reviewing your financials..."):
+                            auto_generate_insights()
+                    except Exception as ex:
+                        st.error(f"Dataset upload error: {ex}")
+                elif name.endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    raw = f.read()
+                    st.session_state.cb_img_bytes = raw
+                    st.session_state.cb_img_mime = f.type
+                    processed = True
+                    st.session_state.processed_files[cache_key] = {"bytes": raw, "mime": f.type}
+            
             if processed:
                 save_attachment_record(f.name, getattr(f, "type", ""), source="chat_upload")
                 # Ensure a conversation exists before recording the upload message
