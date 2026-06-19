@@ -1460,6 +1460,26 @@ def extract_drive_file_id(value):
             return match.group(1)
     return ""
 
+def extract_filename_from_headers(headers, default_filename):
+    cd = headers.get("Content-Disposition", "")
+    if not cd:
+        return default_filename
+    
+    # Try RFC 5987 UTF-8 encoding first
+    rfc_match = re.search(r"filename\*=UTF-8''([^;\n]+)", cd, re.IGNORECASE)
+    if rfc_match:
+        try:
+            return urllib.parse.unquote(rfc_match.group(1))
+        except Exception:
+            pass
+            
+    # Fallback to standard filename="filename"
+    std_match = re.search(r'filename="?([^";\n]+)"?', cd, re.IGNORECASE)
+    if std_match:
+        return std_match.group(1)
+        
+    return default_filename
+
 def download_drive_share_link(link_or_id, file_kind):
     file_id = extract_drive_file_id(link_or_id)
     if not file_id:
@@ -1527,6 +1547,8 @@ def download_drive_share_link(link_or_id, file_kind):
     with urllib.request.urlopen(request, timeout=60) as response:
         data = response.read()
         content_type = response.headers.get("Content-Type", "")
+        # Extract original filename from Content-Disposition header if available
+        filename = extract_filename_from_headers(response.headers, filename)
 
     if b"Google Drive - Virus scan warning" in data or "text/html" in content_type:
         raise ValueError("Could not download this file. Make sure the Drive link is shared with access set to Anyone with the link.")
@@ -1539,7 +1561,7 @@ def render_data_analysis():
     with col1:
         st.subheader("Data Analysis Workspace")
     with col2:
-        if st.button("❌ Close", key="close_data_ws", use_container_width=True):
+        if st.button("❌", key="close_data_ws", use_container_width=True):
             st.session_state.selected_nav = "Chat"
             st.rerun()
             
@@ -1784,7 +1806,7 @@ def render_document_library():
     with col1:
         st.subheader("Document & File Library")
     with col2:
-        if st.button("❌ Close", key="close_doc_lib", use_container_width=True):
+        if st.button("❌", key="close_doc_lib", use_container_width=True):
             st.session_state.selected_nav = "Chat"
             st.rerun()
     st.caption("Manage your historically uploaded documents, images, and datasets. Click 'Preview' to view file contents, 'Download' to download a file, 'Restore' to load a file into your active chat session, or 'Delete' to remove it.")
@@ -2078,7 +2100,7 @@ def render_google_drive_upload():
     with col1:
         st.subheader("Upload From Google Drive")
     with col2:
-        if st.button("❌ Close", key="close_gdrive", use_container_width=True):
+        if st.button("❌", key="close_gdrive", use_container_width=True):
             st.session_state.selected_nav = "Chat"
             st.rerun()
     st.caption("Browse and select files directly from your Google Drive using your Google credentials.")
