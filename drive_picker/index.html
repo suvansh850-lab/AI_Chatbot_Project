@@ -158,7 +158,11 @@
       const left = (window.screen.width - popupWidth) / 2;
       const top = (window.screen.height - popupHeight) / 2;
       
-      window.location.assign(popupUrl);
+      window.open(
+        popupUrl, 
+        "google_drive_picker_popup", 
+        `width=${popupWidth},height=${popupHeight},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      );
     }
 
     // --- Google Drive Picker Logic ---
