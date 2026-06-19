@@ -190,19 +190,19 @@ def db_action(action, *args, **kwargs):
         st.session_state.db_error = str(ex)
         return None
 
-@st.cache_data(show_spinner=False, ttl=300)
+@st.cache_data(show_spinner=False, ttl=5)
 def cached_list_conversations(user_id: int, limit: int):
     return list_conversations(user_id, limit)
 
-@st.cache_data(show_spinner=False, ttl=300)
+@st.cache_data(show_spinner=False, ttl=5)
 def cached_load_messages(conversation_id: int):
     return load_messages(conversation_id)
 
-@st.cache_data(show_spinner=False, ttl=300)
+@st.cache_data(show_spinner=False, ttl=5)
 def cached_load_user_uploads(user_id: int):
     return load_user_uploads(user_id)
 
-@st.cache_data(show_spinner=False, ttl=300)
+@st.cache_data(show_spinner=False, ttl=5)
 def cached_load_conversation_uploads(conversation_id: int):
     return load_conversation_uploads(conversation_id)
 
