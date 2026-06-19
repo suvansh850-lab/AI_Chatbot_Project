@@ -492,6 +492,7 @@ def get_mysql_connect_params(timeout: int = 15) -> dict[str, Any]:
         "database": DB_CONFIG["database"],
         "connection_timeout": timeout,
         "raise_on_warnings": False,
+        "use_pure": True,
     }
     
     # Process SSL CA path
