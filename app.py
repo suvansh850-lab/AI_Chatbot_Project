@@ -1883,10 +1883,29 @@ def render_document_library():
                 filename = item["filename"]
                 uploaded_at = item["uploaded_at"]
                 
+                import datetime
+                import os
+                
+                local_uploaded_at = uploaded_at
                 if isinstance(uploaded_at, str):
-                    date_str = uploaded_at[:19].replace("T", " ")
-                elif hasattr(uploaded_at, "strftime"):
-                    date_str = uploaded_at.strftime("%Y-%m-%d %H:%M:%S")
+                    try:
+                        # Clean string and convert to datetime object
+                        clean_str = uploaded_at.replace("T", " ").replace("Z", "").split(".")[0]
+                        local_uploaded_at = datetime.datetime.strptime(clean_str, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        pass
+                
+                if isinstance(local_uploaded_at, datetime.datetime):
+                    if local_uploaded_at.tzinfo is None:
+                        local_uploaded_at = local_uploaded_at.replace(tzinfo=datetime.timezone.utc)
+                    
+                    if os.name == 'nt':
+                        local_uploaded_at = local_uploaded_at.astimezone()
+                    else:
+                        ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+                        local_uploaded_at = local_uploaded_at.astimezone(ist_tz)
+                        
+                    date_str = local_uploaded_at.strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     date_str = str(uploaded_at)
 
