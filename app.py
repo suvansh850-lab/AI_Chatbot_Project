@@ -2554,11 +2554,6 @@ def render_sidebar():
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        import database
-        db_type_info = "SQLite Fallback" if database.USE_SQLITE else f"MySQL ({database.DB_HOST})"
-        st.markdown(f"<div style='font-size:0.75rem; color:#da7756; background:rgba(218, 119, 86, 0.08); border:1px solid rgba(218, 119, 86, 0.15); border-radius:6px; padding:6px; margin-bottom:12px; text-align:center;'>💾 Database: <strong>{db_type_info}</strong></div>", unsafe_allow_html=True)
-
         col1, col2 = st.columns(2)
         with col1:
             if st.button("New Chat", key="nav_Chat", use_container_width=True):
