@@ -3000,6 +3000,104 @@ for i, q in enumerate(quick):
 
 record_profiler_checkpoint("Quick Prompts & Navigation Routing")
 
+def render_copy_button(text, key):
+    import urllib.parse
+    escaped_text = urllib.parse.quote(text)
+    button_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background-color: transparent;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }}
+            .copy-btn {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                background-color: #fbfaf7;
+                color: #1c1b1a;
+                border: 1px solid #e5e3d9;
+                padding: 5px 12px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+                height: 33px;
+                box-sizing: border-box;
+                width: 100%;
+            }}
+            .copy-btn:hover {{
+                background-color: #f5f2eb;
+                border-color: #da7756;
+                color: #da7756;
+            }}
+            .copy-btn:active {{
+                transform: scale(0.98);
+            }}
+            .copied {{
+                background-color: rgba(16, 185, 129, 0.08) !important;
+                border-color: #10b981 !important;
+                color: #10b981 !important;
+            }}
+        </style>
+    </head>
+    <body>
+        <button id="btn" class="copy-btn" onclick="doCopy()">
+            <i class="fa-regular fa-copy"></i> Copy
+        </button>
+
+        <script>
+            function doCopy() {{
+                const text = decodeURIComponent('{escaped_text}');
+                
+                function fallbackCopy(val) {{
+                    const el = document.createElement('textarea');
+                    el.value = val;
+                    el.style.position = 'absolute';
+                    el.style.left = '-9999px';
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                }}
+
+                if (navigator.clipboard) {{
+                    navigator.clipboard.writeText(text).then(function() {{
+                        showSuccess();
+                    }}, function() {{
+                        fallbackCopy(text);
+                        showSuccess();
+                    }});
+                }} else {{
+                    fallbackCopy(text);
+                    showSuccess();
+                }}
+            }}
+
+            function showSuccess() {{
+                const btn = document.getElementById('btn');
+                btn.classList.add('copied');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(function() {{
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                }}, 2000);
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    components.html(button_html, height=35)
+
 # --- chat history ---
 chat_box = st.container()
 with chat_box:
@@ -3066,8 +3164,8 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_btn, col_spacer = st.columns([2, 8])
-                with col_btn:
+                col_listen, col_copy, col_spacer = st.columns([1.8, 1.8, 6.4])
+                with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
                         if msg_hash not in st.session_state.tts_audio_cache:
@@ -3114,6 +3212,9 @@ with chat_box:
                                         st.error("Edge-TTS synthesis failed: No audio data returned.")
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
+                
+                with col_copy:
+                    render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
                 
                 if st.session_state.get(f"play_{idx}_{msg_hash}", False) and msg_hash in st.session_state.tts_audio_cache:
                     st.audio(st.session_state.tts_audio_cache[msg_hash], format="audio/mp3", autoplay=True)
