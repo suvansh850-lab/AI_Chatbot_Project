@@ -705,6 +705,7 @@ def render_login_page():
             elif username == LOGIN_USERNAME and password == get_login_password():
                 st.session_state.authenticated = True
                 st.session_state.username = LOGIN_USERNAME
+                st.session_state.recent_conversations = None
                 setup_database_session(show_errors=True)
                 st.rerun()
             elif db_available:
@@ -713,6 +714,7 @@ def render_login_page():
                     st.session_state.authenticated = True
                     st.session_state.username = username
                     st.session_state.db_user_id = user_id
+                    st.session_state.recent_conversations = None
                     st.rerun()
                 else:
                     st.error("Invalid username or password.")
@@ -816,6 +818,7 @@ if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLI
                         # Set login session state
                         st.session_state.authenticated = True
                         st.session_state.username = email
+                        st.session_state.recent_conversations = None
                         if user_id:
                             st.session_state.db_user_id = user_id
                         
@@ -2726,6 +2729,7 @@ def render_sidebar():
             st.session_state.cb_img_bytes = None
             st.session_state.cb_img_mime = None
             st.session_state.ai_insights_narrative = ""
+            st.session_state.recent_conversations = None
             st.rerun()
 
 
