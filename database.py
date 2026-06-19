@@ -524,7 +524,7 @@ def get_connection_pool():
             params = get_mysql_connect_params(DB_CONNECT_TIMEOUT)
             _connection_pool = mysql.connector.pooling.MySQLConnectionPool(
                 pool_name="ai_chatbot_pool",
-                pool_size=3,
+                pool_size=15,
                 **params
             )
         except Exception:
@@ -571,17 +571,23 @@ def reconnect_connection(conn):
 @contextmanager
 def get_connection():
     conn = database_connection()
-    conn = reconnect_connection(conn)
     try:
         yield conn
         conn.commit()
     except Exception:
-        if conn is not None and conn.is_connected():
-            conn.rollback()
+        if conn is not None:
+            try:
+                if conn.is_connected():
+                    conn.rollback()
+            except Exception:
+                pass
         raise
     finally:
-        if conn is not None and conn.is_connected():
-            conn.close()
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 
 def init_database() -> None:
