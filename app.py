@@ -3014,26 +3014,25 @@ def render_copy_button(text, key):
                 padding: 0;
                 overflow: hidden;
                 background-color: transparent;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                display: flex;
+                justify-content: flex-end;
+                height: 35px;
             }}
             .copy-btn {{
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                gap: 8px;
                 background-color: #fbfaf7;
-                color: #1c1b1a;
+                color: #6b685c;
                 border: 1px solid #e5e3d9;
-                padding: 5px 12px;
-                font-size: 0.82rem;
-                font-weight: 600;
+                font-size: 1rem;
                 border-radius: 8px;
                 cursor: pointer;
                 transition: all 0.2s ease;
                 user-select: none;
                 height: 33px;
+                width: 33px;
                 box-sizing: border-box;
-                width: 100%;
             }}
             .copy-btn:hover {{
                 background-color: #f5f2eb;
@@ -3041,7 +3040,7 @@ def render_copy_button(text, key):
                 color: #da7756;
             }}
             .copy-btn:active {{
-                transform: scale(0.98);
+                transform: scale(0.95);
             }}
             .copied {{
                 background-color: rgba(16, 185, 129, 0.08) !important;
@@ -3052,7 +3051,7 @@ def render_copy_button(text, key):
     </head>
     <body>
         <button id="btn" class="copy-btn" onclick="doCopy()">
-            <i class="fa-regular fa-copy"></i> Copy
+            <i class="fa-regular fa-copy"></i>
         </button>
 
         <script>
@@ -3086,10 +3085,10 @@ def render_copy_button(text, key):
             function showSuccess() {{
                 const btn = document.getElementById('btn');
                 btn.classList.add('copied');
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
                 setTimeout(function() {{
                     btn.classList.remove('copied');
-                    btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
                 }}, 2000);
             }}
         </script>
@@ -3164,7 +3163,7 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_listen, col_copy, col_spacer = st.columns([1.8, 1.8, 6.4])
+                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6])
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
