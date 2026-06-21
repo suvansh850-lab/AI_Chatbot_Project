@@ -3068,11 +3068,11 @@ def render_copy_button(text, key):
         <style>
             body {{
                 margin: 0;
-                padding: 0;
+                padding: 0 10px 0 0;
                 overflow: hidden;
                 background-color: transparent;
                 display: flex;
-                justify-content: flex-start;
+                justify-content: flex-end;
                 align-items: flex-start;
                 height: 33px;
             }}
@@ -3275,9 +3275,9 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_listen, col_copy, col_spacer = st.columns([0.8, 0.8, 8.4], vertical_alignment="center")
+                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6], vertical_alignment="center")
                 with col_listen:
-                    if st.button("🔊", key=f"btn_listen_{idx}_{msg_hash}"):
+                    if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
                         if msg_hash not in st.session_state.tts_audio_cache:
                             with st.spinner("Synthesizing..."):
