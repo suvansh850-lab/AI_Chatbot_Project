@@ -598,6 +598,7 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
     background-color: #f3efe6 !important;
     border: 1px solid #e5e3d9 !important;
     border-radius: 12px !important;
+    padding-bottom: 10px !important;
 }
 
 /* Style for Assistant messages (answer section) background */
@@ -605,6 +606,7 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
     background-color: #faf8f5 !important;
     border: 1px solid #e5e3d9 !important;
     border-radius: 12px !important;
+    padding-bottom: 10px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -3066,13 +3068,13 @@ def render_copy_button(text, key):
         <style>
             body {{
                 margin: 0;
-                padding: 0 6px 0 0;
+                padding: 0 10px 0 0;
                 overflow: hidden;
                 background-color: transparent;
                 display: flex;
                 justify-content: flex-end;
                 align-items: flex-start;
-                height: 45px;
+                height: 33px;
             }}
             .copy-btn {{
                 display: inline-flex;
@@ -3089,7 +3091,7 @@ def render_copy_button(text, key):
                 height: 33px;
                 width: 33px;
                 box-sizing: border-box;
-                margin-top: 7px;
+                margin-top: 0px;
             }}
             .copy-btn:hover {{
                 background-color: #f5f2eb;
@@ -3205,7 +3207,7 @@ def render_copy_button(text, key):
     </body>
     </html>
     """
-    components.html(button_html, height=45)
+    components.html(button_html, height=33)
 
 # --- chat history ---
 chat_box = st.container()
