@@ -3066,7 +3066,7 @@ def render_copy_button(text, key):
         <style>
             body {{
                 margin: 0;
-                padding: 0 12px 0 0;
+                padding: 0 6px 0 0;
                 overflow: hidden;
                 background-color: transparent;
                 display: flex;
