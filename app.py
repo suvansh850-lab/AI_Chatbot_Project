@@ -3066,11 +3066,12 @@ def render_copy_button(text, key):
         <style>
             body {{
                 margin: 0;
-                padding: 0;
+                padding: 0 12px 0 0;
                 overflow: hidden;
                 background-color: transparent;
                 display: flex;
                 justify-content: flex-end;
+                align-items: center;
                 height: 35px;
             }}
             .copy-btn {{
@@ -3271,7 +3272,7 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6])
+                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
