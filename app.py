@@ -593,67 +593,20 @@ div[data-testid="stForm"] button:hover {
     gap: 8px;
 }
 
-/* Style for Assistant messages background and layout */
+/* Style for User messages (prompt section) background */
+div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    background-color: #f3efe6 !important;
+    border: 1px solid #e5e3d9 !important;
+    border-radius: 12px !important;
+}
+
+/* Style for Assistant messages (answer section) background */
 div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
     background-color: #faf8f5 !important;
     border: 1px solid #e5e3d9 !important;
     border-radius: 12px !important;
 }
-
-div[data-testid="stChatMessage"] {
-    position: relative !important;
-}
-
-/* Custom copy button styling */
-.custom-copy-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: #fbfaf7;
-    border: 1px solid #e5e3d9;
-    color: #6b685c;
-    cursor: pointer;
-    font-size: 0.95rem;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.custom-copy-btn:hover {
-    background-color: #f5f2eb;
-    border-color: #da7756;
-    color: #da7756;
-}
-
-.custom-copy-btn.copied {
-    background-color: rgba(16, 185, 129, 0.08) !important;
-    border-color: #10b981 !important;
-    color: #10b981 !important;
-}
 </style>
-<script>
-    function copyToClipboard(btn, b64Text) {
-        try {
-            const text = decodeURIComponent(escape(window.atob(b64Text)));
-            navigator.clipboard.writeText(text).then(function() {
-                btn.classList.add('copied');
-                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                setTimeout(function() {
-                    btn.classList.remove('copied');
-                    btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
-                }, 2000);
-            }).catch(function(err) {
-                console.error('Could not copy text: ', err);
-            });
-        } catch (err) {
-            console.error('Decoding error: ', err);
-        }
-    }
-</script>
 """, unsafe_allow_html=True)
 
 
@@ -3160,28 +3113,81 @@ def render_copy_button(text, key):
             function doCopy() {{
                 const text = decodeURIComponent('{escaped_text}');
                 
-                function fallbackCopy(val) {{
-                    const el = document.createElement('textarea');
-                    el.value = val;
-                    el.style.position = 'absolute';
-                    el.style.left = '-9999px';
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
+                // Fallback sequence:
+                // 1. Try parent navigator.clipboard
+                try {{
+                    if (window.parent && window.parent.navigator && window.parent.navigator.clipboard) {{
+                        window.parent.navigator.clipboard.writeText(text).then(function() {{
+                            showSuccess();
+                        }}).catch(function(err) {{
+                            tryIframeClipboard(text);
+                        }});
+                        return;
+                    }}
+                }} catch (e) {{
+                    // CORS or other errors
                 }}
+                
+                tryIframeClipboard(text);
+            }}
 
+            function tryIframeClipboard(text) {{
+                // 2. Try iframe navigator.clipboard
                 if (navigator.clipboard) {{
                     navigator.clipboard.writeText(text).then(function() {{
                         showSuccess();
-                    }}, function() {{
-                        fallbackCopy(text);
-                        showSuccess();
+                    }}).catch(function(err) {{
+                        tryParentExecCommand(text);
                     }});
                 }} else {{
-                    fallbackCopy(text);
-                    showSuccess();
+                    tryParentExecCommand(text);
                 }}
+            }}
+
+            function tryParentExecCommand(text) {{
+                // 3. Try parent document execCommand (very reliable for same-origin iframe)
+                try {{
+                    if (window.parent && window.parent.document) {{
+                        const pDoc = window.parent.document;
+                        const el = pDoc.createElement('textarea');
+                        el.value = text;
+                        el.style.position = 'fixed';
+                        el.style.left = '-9999px';
+                        pDoc.body.appendChild(el);
+                        el.select();
+                        const successful = pDoc.execCommand('copy');
+                        pDoc.body.removeChild(el);
+                        if (successful) {{
+                            showSuccess();
+                            return;
+                        }}
+                    }}
+                }} catch (e) {{
+                    // CORS or other errors
+                }}
+                
+                tryIframeExecCommand(text);
+            }}
+
+            function tryIframeExecCommand(text) {{
+                // 4. Try iframe document execCommand
+                const el = document.createElement('textarea');
+                el.value = text;
+                el.style.position = 'fixed';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                try {{
+                    const successful = document.execCommand('copy');
+                    if (successful) {{
+                        showSuccess();
+                    }} else {{
+                        console.error('execCommand copy failed');
+                    }}
+                }} catch (err) {{
+                    console.error('All copy fallbacks failed: ', err);
+                }}
+                document.body.removeChild(el);
             }}
 
             function showSuccess() {{
@@ -3204,17 +3210,6 @@ chat_box = st.container()
 with chat_box:
     for idx, msg in enumerate(st.session_state.cb_messages):
         with st.chat_message(msg["role"]):
-            if msg["role"] == "assistant":
-                # Render custom top-right copy button using base64 encoded value for safety
-                import base64
-                b64_content = base64.b64encode(msg["content"].encode("utf-8")).decode("utf-8")
-                st.markdown(
-                    f'<button class="custom-copy-btn" onclick="copyToClipboard(this, \'{b64_content}\')">'
-                    f'<i class="fa-regular fa-copy"></i>'
-                    f'</button>',
-                    unsafe_allow_html=True
-                )
-            
             # Check if this is a file attachment/upload indicator message
             content = msg["content"]
             is_file_indicator = False
@@ -3276,52 +3271,57 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
-                    st.session_state[f"play_{idx}_{msg_hash}"] = True
-                    if msg_hash not in st.session_state.tts_audio_cache:
-                        with st.spinner("Synthesizing..."):
-                            try:
-                                voice_map = {
-                                    "alice": "en-GB-SoniaNeural",
-                                    "sarah": "en-US-AriaNeural",
-                                    "charlie": "en-US-ChristopherNeural",
-                                    "george": "en-GB-RyanNeural",
-                                    "callum": "en-AU-WilliamNeural",
-                                    "river": "en-US-MichelleNeural",
-                                    "liam": "en-US-GuyNeural",
-                                    "matilda": "en-US-JennyNeural",
-                                    "will": "en-US-EricNeural",
-                                    "jessica": "en-US-JennyNeural",
-                                    "eric": "en-US-EricNeural",
-                                    "bella": "en-US-AriaNeural",
-                                    "chris": "en-US-ChristopherNeural",
-                                    "brian": "en-GB-RyanNeural",
-                                    "daniel": "en-US-GuyNeural",
-                                    "lily": "en-US-JennyNeural",
-                                    "adam": "en-US-ChristopherNeural",
-                                    "bill": "en-US-EricNeural"
-                                }
-                                selected_voice = st.session_state.get("voice_response_tts_voice", "Alice")
-                                voice_id = voice_map.get(selected_voice.lower(), "en-US-AriaNeural")
-                                
-                                import asyncio
-                                import edge_tts
-                                
-                                async def _synthesize(text, voice):
-                                    communicate = edge_tts.Communicate(text, voice)
-                                    audio_data = b""
-                                    async for chunk in communicate.stream():
-                                        if chunk["type"] == "audio":
-                                            audio_data += chunk["data"]
-                                    return audio_data
-                                
-                                audio_bytes = asyncio.run(_synthesize(msg_content[:4000], voice_id))
-                                if audio_bytes:
-                                    st.session_state.tts_audio_cache[msg_hash] = audio_bytes
-                                else:
-                                    st.error("Edge-TTS synthesis failed: No audio data returned.")
-                            except Exception as tts_err:
-                                st.error(f"TTS error: {tts_err}")
+                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6])
+                with col_listen:
+                    if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
+                        st.session_state[f"play_{idx}_{msg_hash}"] = True
+                        if msg_hash not in st.session_state.tts_audio_cache:
+                            with st.spinner("Synthesizing..."):
+                                try:
+                                    voice_map = {
+                                        "alice": "en-GB-SoniaNeural",
+                                        "sarah": "en-US-AriaNeural",
+                                        "charlie": "en-US-ChristopherNeural",
+                                        "george": "en-GB-RyanNeural",
+                                        "callum": "en-AU-WilliamNeural",
+                                        "river": "en-US-MichelleNeural",
+                                        "liam": "en-US-GuyNeural",
+                                        "matilda": "en-US-JennyNeural",
+                                        "will": "en-US-EricNeural",
+                                        "jessica": "en-US-JennyNeural",
+                                        "eric": "en-US-EricNeural",
+                                        "bella": "en-US-AriaNeural",
+                                        "chris": "en-US-ChristopherNeural",
+                                        "brian": "en-GB-RyanNeural",
+                                        "daniel": "en-US-GuyNeural",
+                                        "lily": "en-US-JennyNeural",
+                                        "adam": "en-US-ChristopherNeural",
+                                        "bill": "en-US-EricNeural"
+                                    }
+                                    selected_voice = st.session_state.get("voice_response_tts_voice", "Alice")
+                                    voice_id = voice_map.get(selected_voice.lower(), "en-US-AriaNeural")
+                                    
+                                    import asyncio
+                                    import edge_tts
+                                    
+                                    async def _synthesize(text, voice):
+                                        communicate = edge_tts.Communicate(text, voice)
+                                        audio_data = b""
+                                        async for chunk in communicate.stream():
+                                            if chunk["type"] == "audio":
+                                                audio_data += chunk["data"]
+                                        return audio_data
+                                    
+                                    audio_bytes = asyncio.run(_synthesize(msg_content[:4000], voice_id))
+                                    if audio_bytes:
+                                        st.session_state.tts_audio_cache[msg_hash] = audio_bytes
+                                    else:
+                                        st.error("Edge-TTS synthesis failed: No audio data returned.")
+                                except Exception as tts_err:
+                                    st.error(f"TTS error: {tts_err}")
+                
+                with col_copy:
+                    render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
                 
                 if st.session_state.get(f"play_{idx}_{msg_hash}", False) and msg_hash in st.session_state.tts_audio_cache:
                     st.audio(st.session_state.tts_audio_cache[msg_hash], format="audio/mp3", autoplay=True)
