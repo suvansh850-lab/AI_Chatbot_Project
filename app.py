@@ -3071,8 +3071,8 @@ def render_copy_button(text, key):
                 background-color: transparent;
                 display: flex;
                 justify-content: flex-end;
-                align-items: center;
-                height: 35px;
+                align-items: flex-start;
+                height: 40px;
             }}
             .copy-btn {{
                 display: inline-flex;
@@ -3089,6 +3089,7 @@ def render_copy_button(text, key):
                 height: 33px;
                 width: 33px;
                 box-sizing: border-box;
+                margin-top: 4px;
             }}
             .copy-btn:hover {{
                 background-color: #f5f2eb;
@@ -3204,7 +3205,7 @@ def render_copy_button(text, key):
     </body>
     </html>
     """
-    components.html(button_html, height=35)
+    components.html(button_html, height=40)
 
 # --- chat history ---
 chat_box = st.container()
