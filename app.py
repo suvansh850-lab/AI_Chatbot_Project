@@ -595,7 +595,7 @@ div[data-testid="stForm"] button:hover {
 
 /* Style for Assistant messages background and layout */
 div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-    background-color: #f0ece1 !important;
+    background-color: #faf8f5 !important;
     border: 1px solid #e5e3d9 !important;
     border-radius: 12px !important;
 }
