@@ -2639,25 +2639,67 @@ def render_model_picker():
 
     selected = MODEL_OPTIONS[selected_key]
     active_model, available_models, model_error = get_active_model(selected["provider"])
-    st.session_state.active_model_name = active_model
+    
+    # Check if a model is already selected in session state for the active provider
     if selected["provider"] == "Gemini":
-        st.session_state.cb_model = active_model
+        if not st.session_state.get("cb_model") or st.session_state.cb_model not in available_models:
+            st.session_state.cb_model = active_model
+        st.session_state.active_model_name = st.session_state.cb_model
     elif selected["provider"] == "Groq":
-        st.session_state.groq_model = active_model
+        if not st.session_state.get("groq_model") or st.session_state.groq_model not in available_models:
+            st.session_state.groq_model = active_model
+        st.session_state.active_model_name = st.session_state.groq_model
     elif selected["provider"] == "BazaarLink":
-        st.session_state.bazaarlink_model = active_model
+        if not st.session_state.get("bazaarlink_model") or st.session_state.bazaarlink_model not in available_models:
+            st.session_state.bazaarlink_model = active_model
+        st.session_state.active_model_name = st.session_state.bazaarlink_model
 
     _, search_toggle_col, picker_col = st.columns([3.8, 1.6, 1.6])
     with search_toggle_col:
         st.toggle("🌐 Web Search", key="web_search_enabled", help="Enable DuckDuckGo search for real-time information")
     with picker_col:
-        with st.popover(selected["pill"], use_container_width=True):
+        pill_label = f"{selected['pill']} ({st.session_state.active_model_name})" if st.session_state.active_model_name else selected["pill"]
+        with st.popover(pill_label, use_container_width=True):
             st.markdown('<div class="model-menu-title">Select Platform</div>', unsafe_allow_html=True)
             for key, option in MODEL_OPTIONS.items():
                 active = "✓ " if key == selected_key else ""
                 label = option["title"]
                 if st.button(label, key=f"llm_choice_{key}", use_container_width=True):
                     st.session_state.llm_provider = key
+                    st.session_state.active_model_name = ""  # reset to default on provider change
+                    if key == "Gemini":
+                        st.session_state.cb_model = ""
+                    elif key == "Groq":
+                        st.session_state.groq_model = ""
+                    elif key == "BazaarLink":
+                        st.session_state.bazaarlink_model = ""
+                    st.rerun()
+            
+            if available_models:
+                st.markdown('<div class="model-menu-title" style="margin-top:12px;">Select Model</div>', unsafe_allow_html=True)
+                
+                # Determine default index
+                try:
+                    default_idx = available_models.index(st.session_state.active_model_name)
+                except ValueError:
+                    default_idx = 0
+                    
+                selected_model = st.selectbox(
+                    "Model Options",
+                    available_models,
+                    index=default_idx,
+                    key="active_model_selection_selectbox",
+                    label_visibility="collapsed"
+                )
+                
+                if selected_model != st.session_state.active_model_name:
+                    st.session_state.active_model_name = selected_model
+                    if selected["provider"] == "Gemini":
+                        st.session_state.cb_model = selected_model
+                    elif selected["provider"] == "Groq":
+                        st.session_state.groq_model = selected_model
+                    elif selected["provider"] == "BazaarLink":
+                        st.session_state.bazaarlink_model = selected_model
                     st.rerun()
 
 def render_sidebar():
