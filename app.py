@@ -3652,11 +3652,12 @@ if user_input:
             google_creds = st.session_state.get("google_credentials")
 
             access_token = None
-            if google_creds:
-                from backend.google_service import get_valid_token
-                access_token, updated_creds = get_valid_token(st.session_state.db_user_id, google_creds)
-                if updated_creds:
-                    st.session_state.google_credentials = updated_creds
+            # Tool calling disabled to directly stream and show text answers
+            # if google_creds:
+            #     from backend.google_service import get_valid_token
+            #     access_token, updated_creds = get_valid_token(st.session_state.db_user_id, google_creds)
+            #     if updated_creds:
+            #         st.session_state.google_credentials = updated_creds
 
             sys_prompt = (
                 "You are a powerful, friendly, and general-purpose AI assistant. "
