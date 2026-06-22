@@ -2529,35 +2529,36 @@ GEMINI_MODEL_PRIORITY = [
 @st.cache_data(show_spinner=False, ttl=3600)
 def get_available_groq_models(api_key):
     if not api_key or api_key == "YOUR_GROQ_API_KEY_HERE":
-        return []
+        return [], "Groq API key is missing or is set to placeholder."
 
     OpenAI = import_openai_client()
     if OpenAI is None:
-        return []
+        return [], "OpenAI package is not installed."
 
     try:
-        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
+        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key, timeout=10.0)
         model_ids = [model.id for model in client.models.list().data]
-        return sorted(set(model_ids))
-    except Exception:
-        return [
+        return sorted(set(model_ids)), ""
+    except Exception as e:
+        fallback = [
             "llama-3.3-70b-versatile",
             "llama-3.1-8b-instant",
             "mixtral-8x7b-32768",
             "gemma2-9b-it"
         ]
+        return fallback, str(e)
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def get_available_gemini_models(api_key):
     if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
-        return []
+        return [], "Gemini API key is missing or is set to placeholder."
 
     genai = import_genai_module()
     if genai is None:
-        return []
+        return [], "google-generativeai package is not installed."
 
-    genai.configure(api_key=api_key)
     try:
+        genai.configure(api_key=api_key)
         available = []
         for model in genai.list_models():
             methods = getattr(model, "supported_generation_methods", [])
@@ -2565,30 +2566,31 @@ def get_available_gemini_models(api_key):
                 name = model.name.split("/")[-1]
                 if name.startswith("gemini"):
                     available.append(name)
-        return sorted(set(available))
-    except Exception:
-        return [
+        return sorted(set(available)), ""
+    except Exception as e:
+        fallback = [
             "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
             "gemini-1.5-pro",
         ]
+        return fallback, str(e)
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def get_available_bazaarlink_models(api_key):
     if not api_key:
-        return []
+        return [], "BazaarLink API key is missing. Check BAZAARLINK_API_KEY environment variable."
 
     OpenAI = import_openai_client()
     if OpenAI is None:
-        return []
+        return [], "OpenAI package is not installed."
 
     try:
-        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=api_key)
+        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=api_key, timeout=10.0)
         model_ids = [model.id for model in client.models.list().data]
-        return sorted(set(model_ids))
-    except Exception:
-        return [
+        return sorted(set(model_ids)), ""
+    except Exception as e:
+        fallback = [
             "auto:free",
             "gpt-4o",
             "gpt-4o-mini",
@@ -2596,6 +2598,7 @@ def get_available_bazaarlink_models(api_key):
             "gemini-1.5-flash",
             "deepseek-chat"
         ]
+        return fallback, str(e)
 
 def choose_available_model(available_models, preferred_models):
     if not available_models:
@@ -2610,16 +2613,16 @@ def choose_available_model(available_models, preferred_models):
 def get_active_model(provider):
     try:
         if provider == "Gemini":
-            available = get_available_gemini_models(GEMINI_API_KEY)
-            return choose_available_model(available, GEMINI_MODEL_PRIORITY), available, ""
+            available, err = get_available_gemini_models(GEMINI_API_KEY)
+            return choose_available_model(available, GEMINI_MODEL_PRIORITY), available, err
 
         if provider == "Groq":
-            available = get_available_groq_models(GROQ_API_KEY)
-            return choose_available_model(available, GROQ_MODEL_PRIORITY), available, ""
+            available, err = get_available_groq_models(GROQ_API_KEY)
+            return choose_available_model(available, GROQ_MODEL_PRIORITY), available, err
 
         if provider == "BazaarLink":
-            available = get_available_bazaarlink_models(BAZAARLINK_API_KEY)
-            return choose_available_model(available, BAZAARLINK_MODEL_PRIORITY), available, ""
+            available, err = get_available_bazaarlink_models(BAZAARLINK_API_KEY)
+            return choose_available_model(available, BAZAARLINK_MODEL_PRIORITY), available, err
 
         raise ValueError(f"Unknown or unsupported provider: {provider}")
     except Exception as ex:
@@ -2660,6 +2663,8 @@ def render_model_picker():
     with picker_col:
         pill_label = f"{selected['pill']} ({st.session_state.active_model_name})" if st.session_state.active_model_name else selected["pill"]
         with st.popover(pill_label, use_container_width=True):
+            if model_error:
+                st.warning(f"⚠️ API Info: {model_error}. Using fallback list.")
             st.markdown('<div class="model-menu-title">Select Platform</div>', unsafe_allow_html=True)
             for key, option in MODEL_OPTIONS.items():
                 active = "✓ " if key == selected_key else ""
