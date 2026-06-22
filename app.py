@@ -86,7 +86,11 @@ def get_secret(key, default=""):
 
 GEMINI_API_KEY = get_secret("GEMINI_API_KEY", "")
 GROQ_API_KEY = get_secret("GROQ_API_KEY", "")
-BAZAARLINK_API_KEY = get_secret("BazaarLink", "")
+BAZAARLINK_API_KEY = (
+    get_secret("BazaarLink", "") or 
+    get_secret("bazaarlink", "") or 
+    get_secret("BAZAARLINK_API_KEY", "")
+)
 
 BAZAARLINK_MODEL_PRIORITY = [
     "auto:free",
