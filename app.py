@@ -86,6 +86,16 @@ def get_secret(key, default=""):
 
 GEMINI_API_KEY = get_secret("GEMINI_API_KEY", "")
 GROQ_API_KEY = get_secret("GROQ_API_KEY", "")
+BAZAARLINK_API_KEY = get_secret("BazaarLink", "")
+
+BAZAARLINK_MODEL_PRIORITY = [
+    "auto:free",
+    "gpt-4o-mini",
+    "gpt-4o",
+    "claude-3-5-sonnet",
+    "deepseek-chat",
+    "gemini-1.5-flash",
+]
 
 
 GROQ_MODEL_PRIORITY = [
@@ -973,6 +983,7 @@ for key, default in [
     ("llm_provider", "Gemini"),
     ("active_model_name", ""),
     ("groq_model", "llama-3.3-70b-versatile"),
+    ("bazaarlink_model", "auto:free"),
     ("up_keys", {"doc": 0, "img": 0, "data": 0}),
     ("last_audio_bytes", None),
     ("voice_prompt", ""),
@@ -1233,6 +1244,8 @@ def ask_llm(prompt: str) -> str:
             active_model = st.session_state.get("cb_model") or "gemini-1.5-flash"
         elif active_provider == "Groq":
             active_model = st.session_state.get("groq_model") or "llama-3.3-70b-versatile"
+        elif active_provider == "BazaarLink":
+            active_model = st.session_state.get("bazaarlink_model") or "auto:free"
         else:
             active_model = "gemini-1.5-flash"
 
@@ -1249,6 +1262,16 @@ def ask_llm(prompt: str) -> str:
             if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
                 return "Please configure your Groq API Key in Chat."
             client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+            resp = client.chat.completions.create(
+                model=active_model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return resp.choices[0].message.content or ""
+        elif active_provider == "BazaarLink":
+            from openai import OpenAI
+            if not BAZAARLINK_API_KEY:
+                return "Please configure your BazaarLink API Key in secrets.toml."
+            client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=BAZAARLINK_API_KEY)
             resp = client.chat.completions.create(
                 model=active_model,
                 messages=[{"role": "user", "content": prompt}]
@@ -2446,6 +2469,8 @@ def is_vision_model(provider, model):
         return True  # All Gemini models generally support vision or we assume they do
     if provider == "Groq":
         return "vision" in model_l or "llama-3.2" in model_l
+    if provider == "BazaarLink":
+        return "vision" in model_l or "gpt-4" in model_l or "claude" in model_l or "gemini" in model_l
     return False
 
 def build_openai_messages(sys_prompt, previous_messages, current_text, image_bytes=None, image_mime=None, is_vision=True):
@@ -2481,6 +2506,12 @@ MODEL_OPTIONS = {
         "subtitle": "Auto-selects an available Groq model for your key",
         "provider": "Groq",
         "pill": "Groq",
+    },
+    "BazaarLink": {
+        "title": "BazaarLink",
+        "subtitle": "Unified access to AI models (OpenAI compatible)",
+        "provider": "BazaarLink",
+        "pill": "BazaarLink",
     },
 }
 
@@ -2539,6 +2570,29 @@ def get_available_gemini_models(api_key):
             "gemini-1.5-pro",
         ]
 
+@st.cache_data(show_spinner=False, ttl=3600)
+def get_available_bazaarlink_models(api_key):
+    if not api_key:
+        return []
+
+    OpenAI = import_openai_client()
+    if OpenAI is None:
+        return []
+
+    try:
+        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=api_key)
+        model_ids = [model.id for model in client.models.list().data]
+        return sorted(set(model_ids))
+    except Exception:
+        return [
+            "auto:free",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "claude-3-5-sonnet",
+            "gemini-1.5-flash",
+            "deepseek-chat"
+        ]
+
 def choose_available_model(available_models, preferred_models):
     if not available_models:
         return ""
@@ -2558,6 +2612,10 @@ def get_active_model(provider):
         if provider == "Groq":
             available = get_available_groq_models(GROQ_API_KEY)
             return choose_available_model(available, GROQ_MODEL_PRIORITY), available, ""
+
+        if provider == "BazaarLink":
+            available = get_available_bazaarlink_models(BAZAARLINK_API_KEY)
+            return choose_available_model(available, BAZAARLINK_MODEL_PRIORITY), available, ""
 
         raise ValueError(f"Unknown or unsupported provider: {provider}")
     except Exception as ex:
@@ -2582,6 +2640,8 @@ def render_model_picker():
         st.session_state.cb_model = active_model
     elif selected["provider"] == "Groq":
         st.session_state.groq_model = active_model
+    elif selected["provider"] == "BazaarLink":
+        st.session_state.bazaarlink_model = active_model
 
     _, search_toggle_col, picker_col = st.columns([3.8, 1.6, 1.6])
     with search_toggle_col:
@@ -3341,7 +3401,14 @@ with chat_box:
 # --- chat input ---
 render_model_picker()
 provider = st.session_state.llm_provider
-model_name = st.session_state.cb_model if provider == "Gemini" else st.session_state.groq_model
+if provider == "Gemini":
+    model_name = st.session_state.cb_model
+elif provider == "Groq":
+    model_name = st.session_state.groq_model
+elif provider == "BazaarLink":
+    model_name = st.session_state.get("bazaarlink_model")
+else:
+    model_name = ""
 typed = st.chat_input("Ask me anything...", accept_file="multiple", file_type=["pdf","txt","png","jpg","jpeg","webp","csv","xlsx","xls","doc","docx","pptx"])
 
 st.markdown('<div class="voice-search-label">Voice Search</div>', unsafe_allow_html=True)
@@ -3613,7 +3680,7 @@ if user_input:
 
             is_vision = is_vision_model(provider, model_name)
             if i_bytes and not is_vision:
-                st.warning(f"⚠️ The selected model **{model_name}** ({provider}) does not support image analysis. The query will be processed as text-only. Switch to Gemini or a Groq vision model to analyze the image.")
+                st.warning(f"⚠️ The selected model **{model_name}** ({provider}) does not support image analysis. The query will be processed as text-only. Switch to a vision-supporting model to analyze the image.")
 
             try:
                 # Setup Google tools schema for OpenAI-compatible paths
@@ -3672,16 +3739,22 @@ if user_input:
                         }
                     ]
 
-                if provider == "Groq":
+                if provider in ("Groq", "BazaarLink"):
                     OpenAI = import_openai_client()
                     if OpenAI is None:
                         st.error("Install the OpenAI package first: pip install openai")
                         st.stop()
 
-                    if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
-                        st.error("Add your Groq API key in App.py to use Groq.")
-                        st.stop()
-                    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+                    if provider == "Groq":
+                        if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
+                            st.error("Add your Groq API key in App.py to use Groq.")
+                            st.stop()
+                        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+                    else: # BazaarLink
+                        if not BAZAARLINK_API_KEY:
+                            st.error("Add your BazaarLink API key in secrets.toml to use BazaarLink.")
+                            st.stop()
+                        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=BAZAARLINK_API_KEY)
 
                     if not model_name:
                         st.error(f"No compatible {provider} model was found for this API key.")
