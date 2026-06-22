@@ -3689,7 +3689,8 @@ if user_input:
             try:
                 # Setup Google tools schema for OpenAI-compatible paths
                 tools_list = []
-                if access_token:
+                # Disable tools for BazaarLink's auto:free model as it does not reliably support function calling
+                if access_token and not (provider == "BazaarLink" and model_name == "auto:free"):
                     tools_list = [
                         {
                             "type": "function",
@@ -3753,12 +3754,20 @@ if user_input:
                         if not GROQ_API_KEY or GROQ_API_KEY == "YOUR_GROQ_API_KEY_HERE":
                             st.error("Add your Groq API key in App.py to use Groq.")
                             st.stop()
-                        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+                        client = OpenAI(
+                            base_url="https://api.groq.com/openai/v1",
+                            api_key=GROQ_API_KEY,
+                            timeout=30.0
+                        )
                     else: # BazaarLink
                         if not BAZAARLINK_API_KEY:
                             st.error("Add your BazaarLink API key in secrets.toml to use BazaarLink.")
                             st.stop()
-                        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=BAZAARLINK_API_KEY)
+                        client = OpenAI(
+                            base_url="https://bazaarlink.ai/api/v1",
+                            api_key=BAZAARLINK_API_KEY,
+                            timeout=30.0
+                        )
 
                     if not model_name:
                         st.error(f"No compatible {provider} model was found for this API key.")
