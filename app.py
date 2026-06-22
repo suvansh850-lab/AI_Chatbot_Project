@@ -1275,7 +1275,7 @@ def ask_llm(prompt: str) -> str:
             from openai import OpenAI
             if not BAZAARLINK_API_KEY:
                 return "Please configure your BazaarLink API Key in secrets.toml."
-            client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=BAZAARLINK_API_KEY)
+            client = OpenAI(base_url="https://api.bazaarlink.ai/v1", api_key=BAZAARLINK_API_KEY)
             resp = client.chat.completions.create(
                 model=active_model,
                 messages=[{"role": "user", "content": prompt}]
@@ -2586,7 +2586,7 @@ def get_available_bazaarlink_models(api_key):
         return [], "OpenAI package is not installed."
 
     try:
-        client = OpenAI(base_url="https://bazaarlink.ai/api/v1", api_key=api_key, timeout=10.0)
+        client = OpenAI(base_url="https://api.bazaarlink.ai/v1", api_key=api_key, timeout=10.0)
         model_ids = [model.id for model in client.models.list().data]
         return sorted(set(model_ids)), ""
     except Exception as e:
@@ -3811,7 +3811,7 @@ if user_input:
                             st.error("Add your BazaarLink API key in secrets.toml to use BazaarLink.")
                             st.stop()
                         client = OpenAI(
-                            base_url="https://bazaarlink.ai/api/v1",
+                            base_url="https://api.bazaarlink.ai/v1",
                             api_key=BAZAARLINK_API_KEY,
                             timeout=30.0
                         )
