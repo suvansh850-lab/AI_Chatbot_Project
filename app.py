@@ -92,6 +92,13 @@ BAZAARLINK_API_KEY = (
     get_secret("BAZAARLINK_API_KEY", "")
 )
 
+BAZAARLINK_BASE_URL = "https://bazaarlink.ai/api/v1"
+BAZAARLINK_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Referer": "https://bazaarlink.ai/",
+    "Accept": "application/json",
+}
+
 BAZAARLINK_MODEL_PRIORITY = [
     "auto:free",
     "gpt-4o-mini",
@@ -1275,7 +1282,11 @@ def ask_llm(prompt: str) -> str:
             from openai import OpenAI
             if not BAZAARLINK_API_KEY:
                 return "Please configure your BazaarLink API Key in secrets.toml."
-            client = OpenAI(base_url="https://api.bazaarlink.ai/v1", api_key=BAZAARLINK_API_KEY)
+            client = OpenAI(
+                base_url=BAZAARLINK_BASE_URL,
+                api_key=BAZAARLINK_API_KEY,
+                default_headers=BAZAARLINK_HEADERS
+            )
             resp = client.chat.completions.create(
                 model=active_model,
                 messages=[{"role": "user", "content": prompt}]
@@ -2586,7 +2597,12 @@ def get_available_bazaarlink_models(api_key):
         return [], "OpenAI package is not installed."
 
     try:
-        client = OpenAI(base_url="https://api.bazaarlink.ai/v1", api_key=api_key, timeout=10.0)
+        client = OpenAI(
+            base_url=BAZAARLINK_BASE_URL,
+            api_key=api_key,
+            default_headers=BAZAARLINK_HEADERS,
+            timeout=10.0
+        )
         model_ids = [model.id for model in client.models.list().data]
         return sorted(set(model_ids)), ""
     except Exception as e:
@@ -2598,7 +2614,12 @@ def get_available_bazaarlink_models(api_key):
             "gemini-1.5-flash",
             "deepseek-chat"
         ]
-        return fallback, str(e)
+        err_msg = str(e)
+        if "cloudflare" in err_msg.lower() or "<html" in err_msg.lower() or "doctype" in err_msg.lower() or "just a moment" in err_msg.lower():
+            err_msg = "Cloudflare security challenge or block encountered"
+        elif len(err_msg) > 100:
+            err_msg = err_msg[:97] + "..."
+        return fallback, err_msg
 
 def choose_available_model(available_models, preferred_models):
     if not available_models:
@@ -3811,8 +3832,9 @@ if user_input:
                             st.error("Add your BazaarLink API key in secrets.toml to use BazaarLink.")
                             st.stop()
                         client = OpenAI(
-                            base_url="https://api.bazaarlink.ai/v1",
+                            base_url=BAZAARLINK_BASE_URL,
                             api_key=BAZAARLINK_API_KEY,
+                            default_headers=BAZAARLINK_HEADERS,
                             timeout=30.0
                         )
 
