@@ -2882,7 +2882,9 @@ def generate_docx_transcript(messages):
     
     doc = docx.Document()
     doc.add_heading('Morepen AI - Chat Transcript', level=1)
-    doc.add_paragraph('Exported on: ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now_ist = datetime.datetime.now(ist_tz)
+    doc.add_paragraph('Exported on: ' + now_ist.strftime('%Y-%m-%d %H:%M:%S'))
     doc.add_paragraph()
     
     for msg in messages:
@@ -2957,8 +2959,10 @@ def generate_pdf_transcript(messages):
         spaceAfter=10
     )
     
+    ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now_ist = datetime.datetime.now(ist_tz)
     story.append(Paragraph("Morepen AI - Chat Transcript", title_style))
-    story.append(Paragraph(f"Exported on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", meta_style))
+    story.append(Paragraph(f"Exported on: {now_ist.strftime('%Y-%m-%d %H:%M:%S')}", meta_style))
     story.append(Spacer(1, 10))
     
     for msg in messages:
@@ -2979,6 +2983,9 @@ with tc3:
     with st.popover("💾 Export", use_container_width=True):
         st.markdown("<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>Export Format</div>", unsafe_allow_html=True)
         
+        ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+        now_ist = datetime.datetime.now(ist_tz)
+        
         # 1. Plain Text Download
         lines = []
         for msg in st.session_state.cb_messages:
@@ -2989,7 +2996,7 @@ with tc3:
         st.download_button(
             "TXT Format (.txt)",
             data=export_txt,
-            file_name=f"chat_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            file_name=f"chat_{now_ist.strftime('%Y%m%d_%H%M%S')}.txt",
             mime="text/plain",
             use_container_width=True
         )
@@ -3004,7 +3011,7 @@ with tc3:
                 st.download_button(
                     "Word Format (.docx)",
                     data=docx_data,
-                    file_name=f"chat_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.docx",
+                    file_name=f"chat_{now_ist.strftime('%Y%m%d_%H%M%S')}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     use_container_width=True
                 )
@@ -3020,7 +3027,7 @@ with tc3:
                 st.download_button(
                     "PDF Format (.pdf)",
                     data=pdf_data,
-                    file_name=f"chat_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    file_name=f"chat_{now_ist.strftime('%Y%m%d_%H%M%S')}.pdf",
                     mime="application/pdf",
                     use_container_width=True
                 )
