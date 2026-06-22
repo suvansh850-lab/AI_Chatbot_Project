@@ -3786,13 +3786,12 @@ if user_input:
                     answer = ""
 
                     if tools_list:
-                        with st.spinner("Processing tools..."):
-                            response = client.chat.completions.create(
-                                model=model_name,
-                                messages=messages,
-                                tools=tools_list,
-                                tool_choice="auto"
-                            )
+                        response = client.chat.completions.create(
+                            model=model_name,
+                            messages=messages,
+                            tools=tools_list,
+                            tool_choice="auto"
+                        )
                         response_message = response.choices[0].message
                         if response_message.tool_calls:
                             import json
@@ -3803,44 +3802,43 @@ if user_input:
                             for tool_call in response_message.tool_calls:
                                 args = json.loads(tool_call.function.arguments)
                                 fn_name = tool_call.function.name
-                                with st.spinner(f"Running Google action: {fn_name}..."):
-                                    if fn_name == "draft_gmail_email":
-                                        body_text = args.get("body", "")
-                                        res = draft_email(args.get("recipient", ""), args.get("subject", ""), body_text, access_token)
-                                        if res.startswith("Successfully"):
-                                            tool_confirmations.append(
-                                                f"✅ **Email draft saved to Gmail Drafts!**\n\n"
-                                                f"**To:** {args.get('recipient', '')}\n"
-                                                f"**Subject:** {args.get('subject', '')}\n\n"
-                                                f"---\n\n{body_text}"
-                                            )
-                                        else:
-                                            tool_confirmations.append(f"❌ {res}")
-                                    elif fn_name == "send_gmail_email":
-                                        body_text = args.get("body", "")
-                                        res = send_email(args.get("recipient", ""), args.get("subject", ""), body_text, access_token)
-                                        if res.startswith("Email successfully"):
-                                            tool_confirmations.append(
-                                                f"✅ **Email sent successfully!**\n\n"
-                                                f"**To:** {args.get('recipient', '')}\n"
-                                                f"**Subject:** {args.get('subject', '')}\n\n"
-                                                f"---\n\n{body_text}"
-                                            )
-                                        else:
-                                            tool_confirmations.append(f"❌ {res}")
-                                    elif fn_name == "create_calendar_event":
-                                        res = create_event(
-                                            args.get("summary", ""),
-                                            args.get("start_time", ""),
-                                            args.get("end_time", ""),
-                                            args.get("description", ""),
-                                            args.get("location", ""),
-                                            access_token
+                                if fn_name == "draft_gmail_email":
+                                    body_text = args.get("body", "")
+                                    res = draft_email(args.get("recipient", ""), args.get("subject", ""), body_text, access_token)
+                                    if res.startswith("Successfully"):
+                                        tool_confirmations.append(
+                                            f"✅ **Email draft saved to Gmail Drafts!**\n\n"
+                                            f"**To:** {args.get('recipient', '')}\n"
+                                            f"**Subject:** {args.get('subject', '')}\n\n"
+                                            f"---\n\n{body_text}"
                                         )
-                                        tool_confirmations.append(f"✅ {res}")
                                     else:
-                                        res = "Unknown function call"
-                                        tool_confirmations.append(res)
+                                        tool_confirmations.append(f"❌ {res}")
+                                elif fn_name == "send_gmail_email":
+                                    body_text = args.get("body", "")
+                                    res = send_email(args.get("recipient", ""), args.get("subject", ""), body_text, access_token)
+                                    if res.startswith("Email successfully"):
+                                        tool_confirmations.append(
+                                            f"✅ **Email sent successfully!**\n\n"
+                                            f"**To:** {args.get('recipient', '')}\n"
+                                            f"**Subject:** {args.get('subject', '')}\n\n"
+                                            f"---\n\n{body_text}"
+                                        )
+                                    else:
+                                        tool_confirmations.append(f"❌ {res}")
+                                elif fn_name == "create_calendar_event":
+                                    res = create_event(
+                                        args.get("summary", ""),
+                                        args.get("start_time", ""),
+                                        args.get("end_time", ""),
+                                        args.get("description", ""),
+                                        args.get("location", ""),
+                                        access_token
+                                    )
+                                    tool_confirmations.append(f"✅ {res}")
+                                else:
+                                    res = "Unknown function call"
+                                    tool_confirmations.append(res)
 
                                 messages.append({
                                     "role": "tool",
@@ -3961,8 +3959,7 @@ if user_input:
                     current_parts.append({"mime_type": mime, "data": i_bytes})
 
                 if tools or i_bytes:
-                    with st.spinner("Processing tools/inputs..."):
-                        resp = chat.send_message(current_parts)
+                    resp = chat.send_message(current_parts)
                     # Check if any Gmail tool was called — show the full original email body instead of LLM rewrite
                     if _gemini_tool_results:
                         confirmation_parts = []
