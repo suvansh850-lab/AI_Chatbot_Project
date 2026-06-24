@@ -18,10 +18,7 @@ COPY . .
 # Create directory to store persistent SQLite and ChromaDB data
 RUN mkdir -p /app/data
 
-# Mark launch script as executable
-RUN chmod +x /app/start_services.sh
-
 # Expose Streamlit's default port
 EXPOSE 8501
 
-CMD ["/app/start_services.sh"]
+CMD ["python", "run.py"]
