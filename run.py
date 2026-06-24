@@ -9,6 +9,10 @@ if not port_str.isdigit():
     print(f"Warning: Allocating fallback port since PORT environment variable was '{port_str}'")
     port_str = "8501"
 
+# Override environment variables to prevent Streamlit from reading raw parent shell string '$PORT'
+os.environ["PORT"] = port_str
+os.environ["STREAMLIT_SERVER_PORT"] = port_str
+
 print(f"Launching FastAPI backend on localhost:8000 in background...")
 backend_process = subprocess.Popen([
     sys.executable, "-m", "uvicorn", "backend.main:app",
