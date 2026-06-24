@@ -3739,8 +3739,24 @@ if user_input:
                 "like: 'Done! I\'ve saved the email draft to your Gmail Drafts folder.' — do NOT reproduce, "
                 "rewrite, or paraphrase the email body in the chat. The email content is already saved in Gmail exactly as written."
             )
-            file_ctx = f"\n\n[Document content (first 3000 chars)]:\n{f_text[:3000]}" if f_text else ""
-            current_text = f"{file_ctx}{data_ctx_str}\n\nUser: {user_input}" if (f_text or data_ctx_str) else user_input
+            # Query vector database for document context if active conversation exists
+            vector_context = ""
+            if db_enabled() and st.session_state.get("active_conversation_id"):
+                try:
+                    from backend.vector_service import query_relevant_context
+                    vector_context = query_relevant_context(
+                        st.session_state.active_conversation_id,
+                        user_input
+                    )
+                except Exception as ve:
+                    print(f"Error querying vector DB in Streamlit: {ve}")
+
+            if vector_context:
+                file_ctx = f"\n\n[Relevant Context from uploaded files]:\n{vector_context}"
+            else:
+                file_ctx = f"\n\n[Document content (first 3000 chars)]:\n{f_text[:3000]}" if f_text else ""
+            
+            current_text = f"{file_ctx}{data_ctx_str}\n\nUser: {user_input}" if (file_ctx or data_ctx_str) else user_input
 
             if 'search_context' in locals() and search_context:
                 sys_prompt += (

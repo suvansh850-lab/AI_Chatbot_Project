@@ -19,3 +19,6 @@ audio-recorder-streamlit
 beautifulsoup4
 python-docx
 reportlab
+chromadb
+pypdf
+langchain-text-splitters

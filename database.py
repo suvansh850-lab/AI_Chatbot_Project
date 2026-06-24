@@ -828,6 +828,15 @@ def save_upload(
         )
         upload_id = int(cursor.lastrowid)
         cursor.close()
+
+        # Trigger vector database indexing in safety try-catch block
+        if file_type == "document" and text_content and conversation_id is not None:
+            try:
+                from backend.vector_service import index_document
+                index_document(conversation_id, filename, text_content)
+            except Exception as ve:
+                print(f"Error triggering vector indexing: {ve}")
+
         return upload_id
 
 

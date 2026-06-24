@@ -119,6 +119,17 @@ def get_active_model(provider: str) -> ModelsResponse:
 
 def build_context_text(request: ChatRequest) -> str:
     parts = []
+    
+    # Retrieve relevant semantic vector context if conversation exists
+    if getattr(request, "conversation_id", None):
+        try:
+            from .vector_service import query_relevant_context
+            vector_context = query_relevant_context(request.conversation_id, request.prompt)
+            if vector_context:
+                parts.append(f"[Relevant Context from uploaded files]:\n{vector_context}")
+        except Exception as ve:
+            print(f"Error querying vector database context: {ve}")
+
     if request.document_text:
         parts.append(f"[Document content]:\n{request.document_text[:3000]}")
     if request.data_context:
