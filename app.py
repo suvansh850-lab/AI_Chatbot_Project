@@ -3346,7 +3346,8 @@ def render_copy_button(text, key):
     </body>
     </html>
     """
-    components.html(button_html, height=33)
+    import urllib.parse
+    st.iframe(f"data:text/html;charset=utf-8,{urllib.parse.quote(button_html)}", height=33)
 
 # --- chat history ---
 chat_box = st.container()
