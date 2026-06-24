@@ -13,7 +13,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Directory where ChromaDB indices will be stored persistently
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "chroma_db"))
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+os.makedirs(DB_PATH, exist_ok=True)
 
 # Initialize ChromaDB persistent client
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
