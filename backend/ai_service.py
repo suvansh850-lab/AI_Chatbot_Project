@@ -45,6 +45,53 @@ SYSTEM_PROMPT = (
 )
 
 
+def open_local_browser_tab(url: str) -> str:
+    """Opens a web page in a new browser tab.
+    Use this tool when the user asks to open a website, browse a URL locally, or open a link in a tab.
+
+    Args:
+        url: The exact HTTP/HTTPS URL of the website to open.
+    """
+    import webbrowser
+    try:
+        clean_url = url.strip().strip("'\"")
+        webbrowser.open(clean_url)
+        return f"Successfully opened new tab for: {clean_url}"
+    except Exception as e:
+        return f"Failed to open browser tab: {e}"
+
+def browse_webpage(url: str) -> str:
+    """Fetches and reads the text content of a webpage so you can answer questions about it.
+    Use this tool when the user asks to read, analyze, search, or summarize the contents of a specific URL.
+
+    Args:
+        url: The HTTP/HTTPS URL of the webpage to read.
+    """
+    import urllib.request
+    import urllib.parse
+    from bs4 import BeautifulSoup
+    try:
+        clean_url = url.strip().strip("'\"")
+        req = urllib.request.Request(
+            clean_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html = response.read()
+        soup = BeautifulSoup(html, "html.parser")
+        for s in soup(["script", "style", "meta", "noscript", "header", "footer", "nav"]):
+            s.decompose()
+        text = soup.get_text(separator=" ", strip=True)
+        truncated_text = text[:4000]
+        if len(text) > 4000:
+            truncated_text += "\n\n[Content truncated for length limit]"
+        return f"Successfully fetched content from {clean_url}:\n\n{truncated_text}"
+    except Exception as e:
+        return f"Failed to read webpage content from {url}: {e}"
+
+
 def configure_gemini() -> None:
     if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
         genai = import_genai_module()
@@ -383,8 +430,8 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
     if genai is None:
         raise RuntimeError("Install google-generativeai first: pip install google-generativeai")
 
-    # Prepare tools
-    tools = []
+    tools = [open_local_browser_tab, browse_webpage]
+
     if access_token:
         from .google_service import draft_email, create_event
 
@@ -410,7 +457,7 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
             """
             return create_event(summary, start_time, end_time, description, location, access_token)
 
-        tools = [draft_gmail_email, create_calendar_event]
+        tools.extend([draft_gmail_email, create_calendar_event])
 
     model = genai.GenerativeModel(model_info.active_model, system_instruction=sys_prompt, tools=tools)
     history = []
