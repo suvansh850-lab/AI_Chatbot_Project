@@ -3172,10 +3172,10 @@ with tc3:
         else:
             st.button("PDF Format (.pdf)", disabled=True, use_container_width=True)
 
-        # --- Cloud Exports divider ---
+        # --- Google Docs Export divider ---
         st.markdown(
             "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #e5e3d9;'>"
-            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>Cloud Export</div>",
+            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>☁️ Google Docs Export</div>",
             unsafe_allow_html=True
         )
 
@@ -3243,14 +3243,14 @@ with tc3:
                             st.error(f"Google Docs export failed: {ex}")
         elif not gdocs_connected:
             st.button(
-                "📄 Export to Google Docs",
+                "Export to Google Docs",
                 disabled=True,
                 use_container_width=True,
                 help="Connect your Google account in the sidebar to enable Google Docs export.",
             )
             st.caption("ℹ️ Connect Google account in the sidebar to enable.")
         else:
-            st.button("📄 Export to Google Docs", disabled=True, use_container_width=True)
+            st.button("Export to Google Docs", disabled=True, use_container_width=True)
 
 # Show export status notifications below the toolbar (persists across reruns)
 if st.session_state.get("export_status"):
