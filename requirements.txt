@@ -22,3 +22,4 @@ reportlab
 chromadb
 pypdf
 langchain-text-splitters
+croniter

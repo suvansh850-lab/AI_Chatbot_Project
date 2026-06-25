@@ -104,4 +104,21 @@ CREATE TABLE IF NOT EXISTS github_credentials (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS scheduled_tasks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  conversation_id INT NULL,
+  task_name VARCHAR(150) NOT NULL,
+  prompt TEXT NOT NULL,
+  cron_expression VARCHAR(100) NULL,
+  interval_seconds INT NULL,
+  next_run_at DATETIME NOT NULL,
+  last_run_at DATETIME NULL,
+  is_active TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL,
+  INDEX idx_scheduled_next_run (is_active, next_run_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 

@@ -56,6 +56,20 @@ def setup_database():
             init_database()
         except Exception:
             pass
+    try:
+        from .scheduler import start_scheduler
+        start_scheduler()
+    except Exception as e:
+        print(f"Error starting background task scheduler: {e}")
+
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    try:
+        from .scheduler import stop_scheduler
+        stop_scheduler()
+    except Exception as e:
+        print(f"Error stopping background task scheduler: {e}")
 
 
 @app.get("/health")

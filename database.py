@@ -374,6 +374,23 @@ SQLITE_SCHEMA_STATEMENTS = [
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scheduled_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        conversation_id INTEGER NULL,
+        task_name TEXT NOT NULL,
+        prompt TEXT NOT NULL,
+        cron_expression TEXT NULL,
+        interval_seconds INTEGER NULL,
+        next_run_at TEXT NOT NULL,
+        last_run_at TEXT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL
+    )
     """
 ]
 
@@ -485,6 +502,24 @@ SCHEMA_STATEMENTS = [
         scope TEXT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scheduled_tasks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        conversation_id INT NULL,
+        task_name VARCHAR(150) NOT NULL,
+        prompt TEXT NOT NULL,
+        cron_expression VARCHAR(100) NULL,
+        interval_seconds INT NULL,
+        next_run_at DATETIME NOT NULL,
+        last_run_at DATETIME NULL,
+        is_active TINYINT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL,
+        INDEX idx_scheduled_next_run (is_active, next_run_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
 ]
@@ -1057,6 +1092,95 @@ def delete_github_credentials(user_id: int) -> None:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM github_credentials WHERE user_id = %s", (user_id,))
+        cursor.close()
+
+
+def save_scheduled_task(
+    user_id: int, 
+    conversation_id: int | None, 
+    task_name: str, 
+    prompt: str, 
+    cron_expression: str | None, 
+    interval_seconds: int | None, 
+    next_run_at: datetime
+) -> None:
+    next_run_str = next_run_at.strftime('%Y-%m-%d %H:%M:%S') if USE_SQLITE else next_run_at
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO scheduled_tasks 
+            (user_id, conversation_id, task_name, prompt, cron_expression, interval_seconds, next_run_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (user_id, conversation_id, task_name, prompt, cron_expression, interval_seconds, next_run_str),
+        )
+        cursor.close()
+
+
+def load_due_scheduled_tasks() -> list[dict[str, Any]]:
+    now = datetime.now()
+    now_param = now.strftime('%Y-%m-%d %H:%M:%S') if USE_SQLITE else now
+    with get_connection() as conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM scheduled_tasks WHERE is_active = 1 AND next_run_at <= %s",
+            (now_param,),
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
+
+def list_user_scheduled_tasks(user_id: int) -> list[dict[str, Any]]:
+    with get_connection() as conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM scheduled_tasks WHERE user_id = %s ORDER BY created_at DESC",
+            (user_id,),
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
+
+def delete_scheduled_task(user_id: int, task_id: int) -> None:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM scheduled_tasks WHERE id = %s AND user_id = %s",
+            (task_id, user_id),
+        )
+        cursor.close()
+
+
+def update_scheduled_task_run(
+    task_id: int, 
+    next_run_at: datetime, 
+    last_run_at: datetime
+) -> None:
+    next_run_param = next_run_at.strftime('%Y-%m-%d %H:%M:%S') if USE_SQLITE else next_run_at
+    last_run_param = last_run_at.strftime('%Y-%m-%d %H:%M:%S') if USE_SQLITE else last_run_at
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE scheduled_tasks 
+            SET next_run_at = %s, last_run_at = %s 
+            WHERE id = %s
+            """,
+            (next_run_param, last_run_param, task_id),
+        )
+        cursor.close()
+
+
+def deactivate_scheduled_task(task_id: int) -> None:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE scheduled_tasks SET is_active = 0 WHERE id = %s",
+            (task_id,),
+        )
         cursor.close()
 
 

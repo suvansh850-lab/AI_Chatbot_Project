@@ -1958,6 +1958,246 @@ def delete_file_record(item):
         st.session_state.preview_file_id = None
 
 
+def render_scheduled_tasks():
+    import time
+    import datetime
+    from croniter import croniter
+    from database import (
+        list_user_scheduled_tasks,
+        save_scheduled_task,
+        delete_scheduled_task,
+        create_conversation
+    )
+    
+    col1, col2 = st.columns([9, 1])
+    with col1:
+        st.subheader("Scheduled AI Tasks ⏰")
+    with col2:
+        if st.button("❌", key="close_scheduled_tasks", use_container_width=True):
+            st.session_state.selected_nav = "Chat"
+            st.rerun()
+            
+    st.caption(
+        "Automate tasks and have your AI assistant execute prompts periodically. "
+        "Outputs will be saved directly into a dedicated conversation thread and, "
+        "if connected, forwarded to Telegram or WhatsApp."
+    )
+    
+    if not db_enabled():
+        st.warning(
+            "⚠️ MySQL Database is offline. Start Apache and MySQL in XAMPP, "
+            "then log in with a database account to enable the AI Task Scheduler."
+        )
+        st.stop()
+        
+    username = st.session_state.get("username", "")
+    user_id = st.session_state.db_user_id
+    
+    # Check if the user is integrated via Telegram/WhatsApp
+    is_integrated = False
+    integration_type = ""
+    if username.startswith("telegram_"):
+        is_integrated = True
+        integration_type = "Telegram"
+    elif username.startswith("whatsapp_"):
+        is_integrated = True
+        integration_type = "WhatsApp"
+        
+    if is_integrated:
+        st.success(f"🔔 **Mobile Notifications Enabled**: Output will be sent directly to your {integration_type}!")
+    else:
+        with st.expander("💡 Connect to Telegram or WhatsApp"):
+            st.markdown(
+                "You can receive scheduled reports, news summaries, and automated check-ins directly on your phone!\n\n"
+                "**How to connect:**\n"
+                "1. Sign out of this session.\n"
+                "2. Register or log in via our official Telegram Bot or WhatsApp Webhook integration.\n"
+                "3. Once connected, your schedules will automatically alert you on your phone."
+            )
+            
+    # Load recent conversations for dropdown
+    recent_convs = get_recent_conversations(limit=1000) or []
+    conv_map = {c["id"]: c["title"] for c in recent_convs}
+    
+    # Main content layout: Two columns
+    list_col, form_col = st.columns([6, 4])
+    
+    with list_col:
+        st.markdown("### Active Schedules")
+        
+        # Load user scheduled tasks
+        tasks = db_action(list_user_scheduled_tasks, user_id) or []
+        
+        if not tasks:
+            st.info("No scheduled tasks configured yet. Create one using the form on the right!")
+        else:
+            for task in tasks:
+                status_label = "Active" if task.get("is_active") else "Inactive"
+                
+                # Card Container
+                with st.container(border=True):
+                    tc_header, tc_btn = st.columns([8, 2])
+                    with tc_header:
+                        st.markdown(f"**{task['task_name']}**")
+                    with tc_btn:
+                        # Deletion Button
+                        if st.button("🗑️ Delete", key=f"del_task_{task['id']}", use_container_width=True):
+                            db_action(delete_scheduled_task, user_id, task['id'])
+                            st.success(f"Deleted '{task['task_name']}'")
+                            time.sleep(0.5)
+                            st.rerun()
+                    
+                    # Prompt display
+                    st.code(task['prompt'], language="text")
+                    
+                    # Schedule Info
+                    if task.get("cron_expression"):
+                        sched_desc = f"🕒 Cron: `{task['cron_expression']}`"
+                    else:
+                        minutes = int(task.get("interval_seconds", 0) / 60)
+                        sched_desc = f"🕒 Every `{minutes}` minute(s)"
+                        
+                    conv_id = task.get("conversation_id")
+                    thread_desc = f"💬 Thread: **{conv_map.get(conv_id, 'None (Silent)')}**" if conv_id else "💬 Thread: **None (Silent)**"
+                    
+                    # Meta columns
+                    mc1, mc2 = st.columns(2)
+                    with mc1:
+                        st.markdown(f"{sched_desc}\n\n{thread_desc}")
+                    with mc2:
+                        next_run = task.get("next_run_at")
+                        last_run = task.get("last_run_at")
+                        
+                        if isinstance(next_run, datetime.datetime):
+                            next_run_str = next_run.strftime("%Y-%m-%d %H:%M:%S")
+                        else:
+                            next_run_str = str(next_run) if next_run else "Never"
+                            
+                        if isinstance(last_run, datetime.datetime):
+                            last_run_str = last_run.strftime("%Y-%m-%d %H:%M:%S")
+                        else:
+                            last_run_str = str(last_run) if last_run else "Never"
+                            
+                        st.markdown(f"⏱️ Next Run: `{next_run_str}`\n\n⏱️ Last Run: `{last_run_str}`")
+                        
+    with form_col:
+        st.markdown("### Create Schedule")
+        
+        t_name = st.text_input("Task Name", placeholder="E.g., Daily Morning Summary", key="new_task_name")
+        t_prompt = st.text_area(
+            "AI Prompt", 
+            placeholder="E.g., Read my google documents and summarize my active todo list.", 
+            key="new_task_prompt",
+            height=120
+        )
+        
+        # Thread option selection
+        thread_mode = st.selectbox(
+            "Chat Thread Integration",
+            ["Create a new dedicated chat thread", "Link to an existing chat thread", "No chat thread"],
+            key="new_task_thread_mode"
+        )
+        
+        linked_conv_id = None
+        if thread_mode == "Link to an existing chat thread":
+            if recent_convs:
+                conv_opts = [f"{c['title']} (ID: {c['id']})" for c in recent_convs]
+                selected_opt = st.selectbox("Select Chat Thread", conv_opts, key="new_task_existing_conv")
+                # Extract ID
+                for c in recent_convs:
+                    if f"{c['title']} (ID: {c['id']})" == selected_opt:
+                        linked_conv_id = c["id"]
+                        break
+            else:
+                st.warning("No existing chats found. We will create a new dedicated chat thread instead.")
+                thread_mode = "Create a new dedicated chat thread"
+                
+        # Recurrence Selector
+        rec_type = st.radio("Recurrence Type", ["Interval (Minutes)", "Cron Schedule"], horizontal=True, key="new_task_rec_type")
+        
+        cron_expr = None
+        interval_secs = None
+        
+        if rec_type == "Interval (Minutes)":
+            interval_mins = st.number_input(
+                "Interval (minutes)", 
+                min_value=1, 
+                max_value=43200, 
+                value=60, 
+                step=1, 
+                key="new_task_interval_mins"
+            )
+            interval_secs = int(interval_mins * 60)
+        else:
+            cron_expr = st.text_input(
+                "Cron Expression", 
+                value="0 9 * * 1", 
+                placeholder="E.g., 0 9 * * 1", 
+                key="new_task_cron"
+            )
+            st.caption(
+                "Format: `min hour day_of_month month day_of_week`  \n"
+                "- `*/15 * * * *` (Every 15 minutes)  \n"
+                "- `0 * * * *` (Every hour)  \n"
+                "- `0 9 * * *` (Daily at 9:00 AM)  \n"
+                "- `0 9 * * 1` (Weekly on Mondays at 9:00 AM)"
+            )
+            
+        if st.button("📅 Schedule Task", use_container_width=True, type="primary"):
+            if not t_name.strip():
+                st.error("Please enter a Task Name.")
+                st.stop()
+            if not t_prompt.strip():
+                st.error("Please enter a Prompt.")
+                st.stop()
+                
+            # Calculate next_run_at and validate schedule
+            now = datetime.datetime.now()
+            next_run_at = None
+            
+            if rec_type == "Cron Schedule":
+                cron_clean = cron_expr.strip()
+                if not cron_clean:
+                    st.error("Please enter a valid Cron Expression.")
+                    st.stop()
+                try:
+                    iter = croniter(cron_clean, now)
+                    next_run_at = iter.get_next(datetime.datetime)
+                except Exception as ex:
+                    st.error(f"Invalid Cron Expression: {ex}")
+                    st.stop()
+            else:
+                next_run_at = now + datetime.timedelta(seconds=interval_secs)
+                
+            # Create conversation thread if needed
+            conv_id = None
+            if thread_mode == "Create a new dedicated chat thread":
+                conv_id = db_action(create_conversation, user_id, title=t_name.strip())
+                if not conv_id:
+                    st.error("Failed to create a dedicated chat thread. Please try again.")
+                    st.stop()
+                # Create initial message in the conversation thread to initialize it
+                db_action(save_message, conv_id, "assistant", f"Welcome! This chat thread is dedicated to the scheduled task **{t_name.strip()}**.")
+            elif thread_mode == "Link to an existing chat thread":
+                conv_id = linked_conv_id
+                
+            # Save the task
+            db_action(
+                save_scheduled_task,
+                user_id,
+                conv_id,
+                t_name.strip(),
+                t_prompt.strip(),
+                cron_clean if rec_type == "Cron Schedule" else None,
+                interval_secs if rec_type == "Interval (Minutes)" else None,
+                next_run_at
+            )
+            
+            st.success(f"Successfully scheduled task '{t_name}'!")
+            time.sleep(0.8)
+            st.rerun()
+
+
 def render_document_library():
     import pandas as pd
     col1, col2 = st.columns([9, 1])
@@ -3223,6 +3463,10 @@ def render_sidebar():
             st.session_state.selected_nav = "Document Library"
             st.rerun()
 
+        if st.button("Scheduled Tasks ⏰", key="feature_Scheduled_Tasks", use_container_width=True):
+            st.session_state.selected_nav = "Scheduled Tasks"
+            st.rerun()
+
 
         # Load GitHub Credentials to see if Explorer should be shown
         github_creds = st.session_state.get("github_credentials")
@@ -3441,6 +3685,11 @@ if st.session_state.selected_nav == "Google Drive Upload":
 if st.session_state.selected_nav == "Document Library":
     render_document_library()
     record_profiler_checkpoint("Document Library View")
+    st.stop()
+
+if st.session_state.selected_nav == "Scheduled Tasks":
+    render_scheduled_tasks()
+    record_profiler_checkpoint("Scheduled Tasks View")
     st.stop()
 
 if st.session_state.selected_nav == "History":
