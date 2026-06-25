@@ -630,108 +630,7 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
     padding-bottom: 10px !important;
 }
 
-/* Styling for horizontal alignment of action buttons in the column */
-div[data-testid="column"]:has(#action-buttons-anchor) div:has(> div.element-container) {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
-}
 
-/* Hide the anchor container completely */
-div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(#action-buttons-anchor) {
-    display: none !important;
-}
-
-/* Constrain the Google Docs button container and copy iframe container to 33px square */
-div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(button),
-div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(iframe) {
-    width: 33px !important;
-    height: 33px !important;
-    min-width: 33px !important;
-    min-height: 33px !important;
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Ensure the button itself is styled exactly like the copy button */
-div[data-testid="column"]:has(#action-buttons-anchor) button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background-color: #fbfaf7 !important;
-    color: #6b685c !important;
-    border: 1px solid #e5e3d9 !important;
-    font-size: 1rem !important;
-    border-radius: 8px !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    user-select: none !important;
-    height: 33px !important;
-    width: 33px !important;
-    min-height: 33px !important;
-    min-width: 33px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-}
-
-div[data-testid="column"]:has(#action-buttons-anchor) button:hover {
-    background-color: #f5f2eb !important;
-    border-color: #da7756 !important;
-    color: #da7756 !important;
-}
-
-div[data-testid="column"]:has(#action-buttons-anchor) button:active {
-    transform: scale(0.95) !important;
-}
-
-div[data-testid="column"]:has(#action-buttons-anchor) button:focus {
-    box-shadow: none !important;
-    outline: none !important;
-    border-color: #e5e3d9 !important;
-    background-color: #fbfaf7 !important;
-    color: #6b685c !important;
-}
-
-div[data-testid="column"]:has(#action-buttons-anchor) button:focus:hover {
-    border-color: #da7756 !important;
-    background-color: #f5f2eb !important;
-    color: #da7756 !important;
-}
-
-div[data-testid="column"]:has(#action-buttons-anchor) button:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
-    background-color: #fbfaf7 !important;
-    border-color: #e5e3d9 !important;
-    color: #6b685c !important;
-}
-
-/* Insert FontAwesome icon into the Google Docs button */
-div[data-testid="column"]:has(#action-buttons-anchor) button::before {
-    content: "\\f15b" !important; /* FontAwesome fa-file-lines regular */
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 400 !important;
-}
-
-/* Hide the text label of the button */
-div[data-testid="column"]:has(#action-buttons-anchor) button p {
-    display: none !important;
-}
-
-/* Styling the copy iframe */
-div[data-testid="column"]:has(#action-buttons-anchor) iframe {
-    width: 33px !important;
-    height: 33px !important;
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-}
 </style>
 
 """, unsafe_allow_html=True)
@@ -3611,7 +3510,7 @@ with chat_box:
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
                 export_status_placeholder = st.empty()
-                col_listen, col_spacer, col_actions = st.columns([1.8, 7.0, 1.2], vertical_alignment="center")
+                col_listen, col_spacer, col_gdocs, col_copy = st.columns([1.8, 7.0, 0.6, 0.6], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
@@ -3660,9 +3559,7 @@ with chat_box:
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
 
-                with col_actions:
-                    st.markdown('<div id="action-buttons-anchor"></div>', unsafe_allow_html=True)
-                    
+                with col_gdocs:
                     # --- Per-message Google Docs Export ---
                     _gcreds_msg = st.session_state.get("google_credentials")
                     _gtoken_msg = None
@@ -3677,7 +3574,7 @@ with chat_box:
                     _gdocs_ok_msg = bool(_gtoken_msg)
                     
                     if st.button(
-                        " ",
+                        "📄",
                         key=f"btn_gdocs_{idx}_{msg_hash}",
                         disabled=not _gdocs_ok_msg,
                         help="Export this response to Google Docs" if _gdocs_ok_msg else "Connect your Google account in the sidebar",
@@ -3721,6 +3618,7 @@ with chat_box:
                                 except Exception as _ex:
                                     export_status_placeholder.error(f"Google Docs export failed: {_ex}")
 
+                with col_copy:
                     # --- Per-message Copy Button ---
                     render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
                 
