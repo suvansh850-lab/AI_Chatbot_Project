@@ -2606,7 +2606,7 @@ def render_github_explorer():
             with st.container():
                 fcol1, fcol2, fcol3 = st.columns([6, 2, 2])
                 with fcol1:
-                    st.markdown(f"**{file_name}**")
+                    st.markdown(f"📄 **{file_name}**")
                     st.caption(f"Path: {file_path}")
                 with fcol2:
                     if st.button("Preview", key=f"preview_file_{idx}", use_container_width=True):
@@ -3241,7 +3241,7 @@ def render_sidebar():
         
         github_linked = bool(github_creds)
         if github_linked:
-            if st.button("GitHub Repository Explorer 📁", key="feature_Github_Explorer", use_container_width=True):
+            if st.button("GitHub Repository Explorer", key="feature_Github_Explorer", use_container_width=True):
                 st.session_state.selected_nav = "GitHub Explorer"
                 st.rerun()
 
