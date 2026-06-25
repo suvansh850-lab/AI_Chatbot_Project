@@ -1023,6 +1023,7 @@ for key, default in [
     ("google_credentials", None),
     ("processed_files", {}),
     ("chats_limit", 30),
+    ("export_status", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -3167,6 +3168,131 @@ with tc3:
                 st.error(f"PDF export error: {e}")
         else:
             st.button("PDF Format (.pdf)", disabled=True, use_container_width=True)
+
+        # --- Cloud Exports divider ---
+        st.markdown(
+            "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #e5e3d9;'>"
+            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>☁️ Cloud Export</div>",
+            unsafe_allow_html=True
+        )
+
+        # 4. Notion Export
+        notion_token = get_secret("NOTION_TOKEN", "")
+        notion_parent_id = get_secret("NOTION_PARENT_PAGE_ID", "")
+        notion_configured = bool(notion_token and notion_parent_id)
+
+        if notion_configured and has_messages:
+            if st.button("📝 Export to Notion", use_container_width=True, key="btn_export_notion"):
+                from backend.export_service import export_to_notion
+                conv_title = st.session_state.get("last_synced_title") or f"Chat {now_ist.strftime('%Y-%m-%d %H:%M')}"
+                with st.spinner("Creating Notion page..."):
+                    try:
+                        notion_url = export_to_notion(
+                            st.session_state.cb_messages,
+                            title=conv_title,
+                            notion_token=notion_token,
+                            parent_page_id=notion_parent_id,
+                        )
+                        st.session_state.export_status = ("notion", "success", notion_url)
+                        st.success("✅ Exported to Notion!")
+                        st.markdown(f"[🔗 Open in Notion]({notion_url})")
+                    except Exception as ex:
+                        st.error(f"Notion export failed: {ex}")
+        elif not notion_configured:
+            st.button(
+                "📝 Export to Notion",
+                disabled=True,
+                use_container_width=True,
+                help="Add NOTION_TOKEN and NOTION_PARENT_PAGE_ID to your secrets.toml to enable.",
+            )
+            st.caption("ℹ️ Set NOTION_TOKEN & NOTION_PARENT_PAGE_ID in secrets.toml to enable.")
+        else:
+            st.button("📝 Export to Notion", disabled=True, use_container_width=True)
+
+        # 5. Google Docs Export
+        google_creds_export = st.session_state.get("google_credentials")
+        gdocs_access_token = None
+        if google_creds_export:
+            try:
+                from backend.google_service import get_valid_token
+                gdocs_access_token, _updated = get_valid_token(
+                    st.session_state.get("db_user_id"), google_creds_export
+                )
+                if _updated:
+                    st.session_state.google_credentials = _updated
+            except Exception:
+                gdocs_access_token = None
+
+        gdocs_connected = bool(gdocs_access_token)
+
+        if gdocs_connected and has_messages:
+            if st.button("📄 Export to Google Docs", use_container_width=True, key="btn_export_gdocs"):
+                from backend.export_service import export_to_google_docs, check_google_docs_scope
+                has_docs_scope = check_google_docs_scope(gdocs_access_token)
+                if not has_docs_scope:
+                    # Prompt re-authorization with documents scope
+                    if GOOGLE_CLIENT_ID:
+                        import urllib.parse
+                        docs_scope = (
+                            "openid email profile "
+                            "https://www.googleapis.com/auth/gmail.compose "
+                            "https://www.googleapis.com/auth/calendar "
+                            "https://www.googleapis.com/auth/documents "
+                            "https://www.googleapis.com/auth/drive.file"
+                        )
+                        reauth_url = (
+                            f"https://accounts.google.com/o/oauth2/v2/auth?"
+                            f"client_id={GOOGLE_CLIENT_ID}&"
+                            f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
+                            f"response_type=code&"
+                            f"scope={urllib.parse.quote(docs_scope)}&"
+                            f"state=connect_google&"
+                            f"access_type=offline&"
+                            f"prompt=consent"
+                        )
+                        st.warning(
+                            "Google Docs export needs an additional permission. "
+                            f"[Click here to re-authorize Google]({reauth_url}) "
+                            "(takes a few seconds), then try again."
+                        )
+                    else:
+                        st.error("Configure GOOGLE_CLIENT_ID to enable Google Docs export.")
+                else:
+                    conv_title = st.session_state.get("last_synced_title") or f"Chat {now_ist.strftime('%Y-%m-%d %H:%M')}"
+                    with st.spinner("Creating Google Doc..."):
+                        try:
+                            gdoc_url = export_to_google_docs(
+                                st.session_state.cb_messages,
+                                title=conv_title,
+                                access_token=gdocs_access_token,
+                            )
+                            st.session_state.export_status = ("gdocs", "success", gdoc_url)
+                            st.success("✅ Exported to Google Docs!")
+                            st.markdown(f"[🔗 Open Google Doc]({gdoc_url})")
+                        except Exception as ex:
+                            st.error(f"Google Docs export failed: {ex}")
+        elif not gdocs_connected:
+            st.button(
+                "📄 Export to Google Docs",
+                disabled=True,
+                use_container_width=True,
+                help="Connect your Google account in the sidebar to enable Google Docs export.",
+            )
+            st.caption("ℹ️ Connect Google account in the sidebar to enable.")
+        else:
+            st.button("📄 Export to Google Docs", disabled=True, use_container_width=True)
+
+# Show export status notifications below the toolbar (persists across reruns)
+if st.session_state.get("export_status"):
+    _exp = st.session_state.export_status
+    if _exp and len(_exp) == 3:
+        _dest, _status, _url = _exp
+        if _dest == "notion" and _status == "success":
+            st.success(f"✅ Chat exported to Notion! [Open page]({_url})")
+        elif _dest == "gdocs" and _status == "success":
+            st.success(f"✅ Chat exported to Google Docs! [Open document]({_url})")
+    st.session_state.export_status = None
+
 # active badges
 if st.session_state.drive_import_notice:
     st.success(st.session_state.drive_import_notice)
