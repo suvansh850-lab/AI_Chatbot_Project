@@ -877,7 +877,7 @@ if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLI
                         # Clear URL query parameters
                         st.query_params.clear()
                         if state == "connect_google":
-                            st.success("Successfully connected to Gmail and Google Calendar!")
+                            st.success("Successfully Connected")
                         else:
                             st.success(f"Welcome back, {name}!")
                         time.sleep(1)
@@ -943,7 +943,7 @@ if st.session_state.authenticated and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                             db_action(save_google_credentials, st.session_state.db_user_id, access_token, refresh_token, expires_at)
                         
                         st.query_params.clear()
-                        st.success("Successfully connected to Gmail and Google Calendar!")
+                        st.success("Successfully Connected")
                         time.sleep(1)
                         st.rerun()
                     else:
@@ -2172,6 +2172,104 @@ def render_document_library():
                 unsafe_allow_html=True
             )
 
+def render_webhooks_integration():
+    col1, col2 = st.columns([9, 1])
+    with col1:
+        st.subheader("Webhook Integrations")
+    with col2:
+        if st.button("❌", key="close_webhooks_ws", use_container_width=True):
+            st.session_state.selected_nav = "Chat"
+            st.rerun()
+            
+    st.caption("Setup and monitor Telegram and WhatsApp Webhooks to interact with your AI assistant on messaging platforms.")
+
+    telegram_token = get_secret("TELEGRAM_BOT_TOKEN", "")
+    whatsapp_token = get_secret("WHATSAPP_ACCESS_TOKEN", "")
+    whatsapp_phone_id = get_secret("WHATSAPP_PHONE_NUMBER_ID", "")
+    whatsapp_verify_token = get_secret("WHATSAPP_VERIFY_TOKEN", "")
+
+    # Status indicators in columns
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        st.markdown("### 🤖 Telegram Bot")
+        if telegram_token and telegram_token != "your-telegram-bot-token":
+            st.success("🟢 Connected")
+            st.markdown(f"**Bot Token:** `{telegram_token[:6]}...{telegram_token[-6:]}`")
+        else:
+            st.warning("🟡 Not Configured")
+            st.info("To configure Telegram, add `TELEGRAM_BOT_TOKEN` in your secrets/environment variables.")
+
+    with c2:
+        st.markdown("### 💬 WhatsApp Business Cloud")
+        if (whatsapp_token and whatsapp_token != "your-whatsapp-access-token" and
+            whatsapp_phone_id and whatsapp_phone_id != "your-whatsapp-phone-number-id" and
+            whatsapp_verify_token and whatsapp_verify_token != "your-whatsapp-webhook-verify-token"):
+            st.success("🟢 Connected")
+            st.markdown(f"**Phone Number ID:** `{whatsapp_phone_id}`")
+            st.markdown(f"**Verify Token:** `{whatsapp_verify_token}`")
+        else:
+            st.warning("🟡 Not Configured")
+            st.info("To configure WhatsApp, add `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_VERIFY_TOKEN` in your secrets/environment variables.")
+
+    st.markdown("---")
+    
+    tab_urls, tab_tg_guide, tab_wa_guide = st.tabs([
+        "🔌 Callback URLs", "🤖 Telegram Setup Guide", "💬 WhatsApp Setup Guide"
+    ])
+
+    with tab_urls:
+        st.markdown("### Webhook Callback Endpoints")
+        st.markdown(
+            "Use a public tunneling tool like **ngrok** to forward requests to your local FastAPI backend port `8000` "
+            "if you are running the project locally."
+        )
+        
+        # Display the local endpoints
+        st.info("FastAPI Backend webhook routes:")
+        st.markdown(
+            "- **Telegram Callback URL:**\n"
+            "  `http://127.0.0.1:8000/webhook/telegram` (POST)\n"
+            "- **WhatsApp Callback URL:**\n"
+            "  `http://127.0.0.1:8000/webhook/whatsapp` (GET / POST)\n"
+        )
+        
+        st.markdown(
+            "💡 **Note:** Replace `http://127.0.0.1:8000` with your public ngrok URL (e.g. `https://xxxx-xx-xx.ngrok-free.app`) "
+            "when registering webhooks on Meta / Telegram developer portals."
+        )
+
+    with tab_tg_guide:
+        st.markdown("### How to Setup Telegram Bot Webhook")
+        st.markdown(
+            """
+            1. Find **@BotFather** on Telegram and send `/newbot` command to create a bot.
+            2. Copy the **HTTP API Token** and save it as `TELEGRAM_BOT_TOKEN` in your `.streamlit/secrets.toml`.
+            3. Open your browser or run a curl command to set the webhook callback:
+               ```bash
+               curl -X POST "https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/setWebhook?url=<YOUR_PUBLIC_TUNNEL_URL>/webhook/telegram"
+               ```
+            4. Once registered successfully, any message sent to your bot will be answered by this assistant.
+            """
+        )
+
+    with tab_wa_guide:
+        st.markdown("### How to Setup WhatsApp Cloud Webhook")
+        st.markdown(
+            """
+            1. Go to **[Meta Developers Portal](https://developers.facebook.com/)** and create a **Business App**.
+            2. Add **WhatsApp** product to your app.
+            3. Under WhatsApp > **API Setup**, find your **Phone Number ID** and **Temporary Access Token** (or create a permanent system user token).
+            4. Add these values along with a custom **Verify Token** to your `.streamlit/secrets.toml`.
+            5. In the Meta App Dashboard, go to **WhatsApp > Configuration**:
+               - Click **Edit** under Webhooks.
+               - Enter **Callback URL**: `<YOUR_PUBLIC_TUNNEL_URL>/webhook/whatsapp`
+               - Enter **Verify Token**: (the verify token value you set in secrets)
+               - Click **Verify and save**.
+            6. Subscribe to **messages** webhook fields under WhatsApp Webhook Fields table.
+            """
+        )
+
 def render_google_drive_upload():
     col1, col2 = st.columns([9, 1])
     with col1:
@@ -2831,6 +2929,10 @@ def render_sidebar():
             st.session_state.selected_nav = "Document Library"
             st.rerun()
 
+        if st.button("Integration Webhooks 🔌", key="feature_Webhooks", use_container_width=True):
+            st.session_state.selected_nav = "Webhooks"
+            st.rerun()
+
         # --- Google integration status and controls ---
         st.markdown('<div class="side-section-title">Google Integration</div>', unsafe_allow_html=True)
         
@@ -2987,6 +3089,11 @@ if st.session_state.selected_nav == "Google Drive Upload":
 if st.session_state.selected_nav == "Document Library":
     render_document_library()
     record_profiler_checkpoint("Document Library View")
+    st.stop()
+
+if st.session_state.selected_nav == "Webhooks":
+    render_webhooks_integration()
+    record_profiler_checkpoint("Webhooks View")
     st.stop()
 
 if st.session_state.selected_nav == "History":
