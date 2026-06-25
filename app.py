@@ -2484,7 +2484,7 @@ def render_github_explorer():
     with col1:
         st.subheader("GitHub Repository Explorer")
     with col2:
-        if st.button("Close", key="close_github_explorer", use_container_width=True):
+        if st.button("❌", key="close_github_explorer", use_container_width=True):
             st.session_state.selected_nav = "Chat"
             st.rerun()
             
@@ -2532,36 +2532,37 @@ def render_github_explorer():
     path = st.session_state.github_explorer_path
     
     # Breadcrumbs UI
-    st.markdown("### Directory Path")
-    parts = [p for p in path.split("/") if p]
-    
-    # Styled breadcrumbs
-    bc_html = '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.95rem;">'
-    bc_html += '<span style="color: #6b685c;">Path:</span>'
-    bc_html += '<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a; font-weight: bold;">[root]</span>'
-    for p in parts:
-        bc_html += '<span style="color: #94a3b8;">/</span>'
-        bc_html += f'<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a;">{p}</span>'
-    bc_html += '</div>'
-    st.markdown(bc_html, unsafe_allow_html=True)
-    
-    # Navigation Buttons for Breadcrumbs
-    bc_cols = st.columns(max(len(parts) + 1, 1))
-    with bc_cols[0]:
-        if st.button("📁 Root", key="bc_root_btn", use_container_width=True):
-            st.session_state.github_explorer_path = ""
-            st.rerun()
-            
-    running_path = ""
-    for idx, p in enumerate(parts):
-        running_path = f"{running_path}/{p}" if running_path else p
-        with bc_cols[idx + 1]:
-            # Create button closure to capture the target path correctly
-            def make_bc_cb(target_path):
-                return lambda: setattr(st.session_state, "github_explorer_path", target_path)
-            st.button(p, key=f"bc_btn_{idx}", on_click=make_bc_cb(running_path), use_container_width=True)
-            
-    st.markdown("---")
+    if path:
+        st.markdown("### Directory Path")
+        parts = [p for p in path.split("/") if p]
+        
+        # Styled breadcrumbs
+        bc_html = '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.95rem;">'
+        bc_html += '<span style="color: #6b685c;">Path:</span>'
+        bc_html += '<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a; font-weight: bold;">[root]</span>'
+        for p in parts:
+            bc_html += '<span style="color: #94a3b8;">/</span>'
+            bc_html += f'<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a;">{p}</span>'
+        bc_html += '</div>'
+        st.markdown(bc_html, unsafe_allow_html=True)
+        
+        # Navigation Buttons for Breadcrumbs
+        bc_cols = st.columns(len(parts) + 1)
+        with bc_cols[0]:
+            if st.button("📁 Root", key="bc_root_btn", use_container_width=True):
+                st.session_state.github_explorer_path = ""
+                st.rerun()
+                
+        running_path = ""
+        for idx, p in enumerate(parts):
+            running_path = f"{running_path}/{p}" if running_path else p
+            with bc_cols[idx + 1]:
+                # Create button closure to capture the target path correctly
+                def make_bc_cb(target_path):
+                    return lambda: setattr(st.session_state, "github_explorer_path", target_path)
+                st.button(p, key=f"bc_btn_{idx}", on_click=make_bc_cb(running_path), use_container_width=True)
+                
+        st.markdown("---")
     
     with st.spinner("Fetching contents..."):
         contents = list_repo_contents(repo_name, path, access_token)
