@@ -815,7 +815,7 @@ def render_login_page():
 if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     auth_code = st.query_params.get("code")
     state = st.query_params.get("state")
-    if auth_code:
+    if auth_code and state != "connect_github":
         with st.spinner("Logging in with Google..."):
             try:
                 # 1. Exchange authorization code for access token
