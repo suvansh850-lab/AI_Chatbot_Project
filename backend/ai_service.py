@@ -11,10 +11,11 @@ from .config import (
 from .schemas import ChatMessage, ChatRequest, ChatResponse, ModelsResponse
 
 try:
-    from database import load_messages, load_conversation_uploads
+    from database import load_messages, load_conversation_uploads, load_github_credentials
 except ImportError:
     load_messages = None
     load_conversation_uploads = None
+    load_github_credentials = None
 
 
 def import_genai_module():
@@ -230,10 +231,18 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
         except Exception:
             pass
 
+    github_access_token = None
     if user_id is not None:
         try:
             from .google_service import get_valid_token
             access_token, _ = get_valid_token(user_id)
+        except Exception:
+            pass
+        try:
+            if load_github_credentials:
+                git_creds = load_github_credentials(user_id)
+                if git_creds:
+                    github_access_token = git_creds.get("access_token")
         except Exception:
             pass
 
@@ -370,6 +379,59 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
                 }
             ]
 
+        if github_access_token:
+            tools_list.extend([
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "read_github_code_file",
+                        "description": "Read the text content of a file from a GitHub repository.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "repo": {"type": "string", "description": "The repository full name (e.g. 'user/repo')."},
+                                "path": {"type": "string", "description": "The file path in the repository (e.g. 'src/main.py')."}
+                            },
+                            "required": ["repo", "path"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "create_issue_in_github",
+                        "description": "Create a new issue in a GitHub repository.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "repo": {"type": "string", "description": "The repository full name (e.g. 'user/repo')."},
+                                "title": {"type": "string", "description": "The title of the issue."},
+                                "body": {"type": "string", "description": "The detailed description of the issue."}
+                            },
+                            "required": ["repo", "title", "body"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "create_pull_request_in_github",
+                        "description": "Create a new pull request in a GitHub repository.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "repo": {"type": "string", "description": "The repository full name (e.g. 'user/repo')."},
+                                "head_branch": {"type": "string", "description": "The branch containing the changes."},
+                                "base_branch": {"type": "string", "description": "The branch to merge into."},
+                                "title": {"type": "string", "description": "The title of the pull request."},
+                                "description": {"type": "string", "description": "The description of the pull request."}
+                            },
+                            "required": ["repo", "head_branch", "base_branch", "title", "description"]
+                        }
+                    }
+                }
+            ])
+
         kwargs = {
             "model": model_info.active_model,
             "messages": messages,
@@ -401,6 +463,25 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
                         args.get("location", ""),
                         access_token
                     )
+                elif tool_call.function.name == "read_github_code_file":
+                    from .github_service import get_repo_file_content
+                    res_content = get_repo_file_content(args.get("repo", ""), args.get("path", ""), github_access_token)
+                    res = res_content if res_content else "Failed to read file."
+                elif tool_call.function.name == "create_issue_in_github":
+                    from .github_service import create_github_issue
+                    res_obj = create_github_issue(args.get("repo", ""), args.get("title", ""), args.get("body", ""), github_access_token)
+                    res = f"Issue created: {res_obj.get('html_url')}" if res_obj else "Failed to create issue."
+                elif tool_call.function.name == "create_pull_request_in_github":
+                    from .github_service import create_github_pull_request
+                    res_obj = create_github_pull_request(
+                        args.get("repo", ""),
+                        args.get("head_branch", ""),
+                        args.get("base_branch", ""),
+                        args.get("title", ""),
+                        args.get("description", ""),
+                        github_access_token
+                    )
+                    res = f"Pull Request created: {res_obj.get('html_url')}" if res_obj else "Failed to create Pull Request."
                 else:
                     res = "Unknown function call"
 
@@ -458,6 +539,51 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
             return create_event(summary, start_time, end_time, description, location, access_token)
 
         tools.extend([draft_gmail_email, create_calendar_event])
+
+    if github_access_token:
+        from .github_service import get_repo_file_content, create_github_issue, create_github_pull_request
+
+        def read_github_code_file(repo: str, path: str) -> str:
+            """Read the text content of a file from a GitHub repository.
+
+            Args:
+                repo: The repository full name (e.g. 'user/repo').
+                path: The file path in the repository (e.g. 'src/main.py').
+            """
+            content = get_repo_file_content(repo, path, github_access_token)
+            if content is None:
+                return f"Failed to retrieve file {path} from repository {repo}."
+            return f"Content of {path} in repository {repo}:\n\n{content}"
+
+        def create_issue_in_github(repo: str, title: str, body: str) -> str:
+            """Create a new issue in a GitHub repository.
+
+            Args:
+                repo: The repository full name (e.g. 'user/repo').
+                title: The title of the issue.
+                body: The detailed description/body of the issue.
+            """
+            res = create_github_issue(repo, title, body, github_access_token)
+            if res:
+                return f"Successfully created issue #{res.get('number')} in repository {repo}: {res.get('html_url')}"
+            return f"Failed to create issue in repository {repo}."
+
+        def create_pull_request_in_github(repo: str, head_branch: str, base_branch: str, title: str, description: str) -> str:
+            """Create a new pull request (PR) in a GitHub repository.
+
+            Args:
+                repo: The repository full name (e.g. 'user/repo').
+                head_branch: The branch containing the changes (e.g. 'feature-branch').
+                base_branch: The branch to merge into (e.g. 'main').
+                title: The title of the pull request.
+                description: The description/body of the pull request.
+            """
+            res = create_github_pull_request(repo, head_branch, base_branch, title, description, github_access_token)
+            if res:
+                return f"Successfully created Pull Request #{res.get('number')} in repository {repo}: {res.get('html_url')}"
+            return f"Failed to create Pull Request in repository {repo}."
+
+        tools.extend([read_github_code_file, create_issue_in_github, create_pull_request_in_github])
 
     model = genai.GenerativeModel(model_info.active_model, system_instruction=sys_prompt, tools=tools)
     history = []

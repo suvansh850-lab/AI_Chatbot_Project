@@ -123,6 +123,9 @@ GOOGLE_CLIENT_ID = get_secret("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = get_secret("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = get_secret("GOOGLE_REDIRECT_URI", "https://aichatbotproject-ro8mdmtxux3zwvtcpneatu.streamlit.app")
 
+GITHUB_CLIENT_ID = get_secret("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = get_secret("GITHUB_CLIENT_SECRET", "")
+
 def get_login_password():
     return LOGIN_PASSWORD
 
@@ -894,9 +897,62 @@ if not st.session_state.authenticated:
     st.stop()
 
 
-if st.session_state.authenticated and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+if st.session_state.authenticated:
     auth_code = st.query_params.get("code")
-    if auth_code:
+    state = st.query_params.get("state")
+    
+    if auth_code and state == "connect_github" and GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
+        st.markdown(f"""
+        <img src="x" onerror="
+            if (window.top.opener && window.top.opener !== window.top) {{
+                try {{
+                    window.top.opener.location.href = window.top.location.href;
+                    window.top.close();
+                }} catch (e) {{
+                    console.error('Failed to redirect opener:', e);
+                }}
+            }}
+        " style="display:none;">
+        """, unsafe_allow_html=True)
+        if "last_processed_github_code" not in st.session_state or st.session_state.last_processed_github_code != auth_code:
+            st.session_state.last_processed_github_code = auth_code
+            with st.spinner("Connecting to GitHub..."):
+                try:
+                    import time
+                    token_url = "https://github.com/login/oauth/access_token"
+                    token_data = {
+                        "code": auth_code,
+                        "client_id": GITHUB_CLIENT_ID,
+                        "client_secret": GITHUB_CLIENT_SECRET,
+                        "redirect_uri": GOOGLE_REDIRECT_URI,
+                    }
+                    token_headers = {"Accept": "application/json"}
+                    token_response = requests.post(token_url, data=token_data, headers=token_headers, timeout=15)
+                    token_json = token_response.json()
+                    
+                    if "access_token" in token_json:
+                        access_token = token_json["access_token"]
+                        scope = token_json.get("scope", "")
+                        
+                        st.session_state.github_credentials = {
+                            "access_token": access_token,
+                            "scope": scope
+                        }
+                        
+                        if db_enabled() and st.session_state.db_user_id:
+                            from database import save_github_credentials
+                            db_action(save_github_credentials, st.session_state.db_user_id, access_token, scope)
+                        
+                        st.query_params.clear()
+                        st.success("Successfully Connected to GitHub!")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to connect GitHub: {token_json.get('error_description', token_json.get('error', 'Unknown error'))}")
+                except Exception as e:
+                    st.error(f"GitHub OAuth linking failed: {e}")
+                    
+    elif auth_code and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and state != "connect_github":
         st.markdown(f"""
         <img src="x" onerror="
             if (window.top.opener && window.top.opener !== window.top) {{
@@ -1024,6 +1080,9 @@ for key, default in [
     ("voice_search_stt_provider", "Gemini"),
     ("recent_conversations", None),
     ("google_credentials", None),
+    ("github_credentials", None),
+    ("github_explorer_repo", ""),
+    ("github_explorer_path", ""),
     ("processed_files", {}),
     ("chats_limit", 30),
     ("export_status", None),
@@ -2379,6 +2438,199 @@ def render_google_drive_upload():
                     
         drive_link_paste_block()
 
+def render_github_explorer():
+    col1, col2 = st.columns([9, 1])
+    with col1:
+        st.subheader("GitHub Repository Explorer 📁")
+    with col2:
+        if st.button("❌", key="close_github_explorer", use_container_width=True):
+            st.session_state.selected_nav = "Chat"
+            st.rerun()
+            
+    st.caption("Browse repository structure and select source code files to import as context for your AI Assistant.")
+    
+    github_creds = st.session_state.get("github_credentials")
+    if not github_creds:
+        st.warning("⚠️ GitHub not connected. Please connect your account in the sidebar.")
+        st.stop()
+        
+    access_token = github_creds.get("access_token")
+    if not access_token:
+        st.error("Invalid credentials. Try disconnecting and reconnecting in the sidebar.")
+        st.stop()
+        
+    from backend.github_service import list_repositories, list_repo_contents, get_repo_file_content
+    
+    with st.spinner("Loading repositories..."):
+        repos = list_repositories(access_token)
+        
+    if not repos:
+        st.info("No repositories found or access token expired. Verify your permissions.")
+        st.stop()
+        
+    repo_options = [r["full_name"] for r in repos]
+    
+    # Track current selected repo index
+    default_idx = 0
+    if st.session_state.github_explorer_repo in repo_options:
+        default_idx = repo_options.index(st.session_state.github_explorer_repo)
+        
+    selected_repo = st.selectbox(
+        "Select Repository",
+        repo_options,
+        index=default_idx,
+        key="github_repo_select_widget"
+    )
+    
+    if selected_repo != st.session_state.github_explorer_repo:
+        st.session_state.github_explorer_repo = selected_repo
+        st.session_state.github_explorer_path = ""
+        st.rerun()
+        
+    repo_name = st.session_state.github_explorer_repo
+    path = st.session_state.github_explorer_path
+    
+    # Breadcrumbs UI
+    st.markdown("### Directory Path")
+    parts = [p for p in path.split("/") if p]
+    
+    # Styled breadcrumbs
+    bc_html = '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.95rem;">'
+    bc_html += '<span style="color: #6b685c;">Path:</span>'
+    bc_html += '<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a; font-weight: bold;">[root]</span>'
+    for p in parts:
+        bc_html += '<span style="color: #94a3b8;">/</span>'
+        bc_html += f'<span style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; color: #1c1b1a;">{p}</span>'
+    bc_html += '</div>'
+    st.markdown(bc_html, unsafe_allow_html=True)
+    
+    # Navigation Buttons for Breadcrumbs
+    bc_cols = st.columns(max(len(parts) + 1, 1))
+    with bc_cols[0]:
+        if st.button("📁 Root", key="bc_root_btn", use_container_width=True):
+            st.session_state.github_explorer_path = ""
+            st.rerun()
+            
+    running_path = ""
+    for idx, p in enumerate(parts):
+        running_path = f"{running_path}/{p}" if running_path else p
+        with bc_cols[idx + 1]:
+            # Create button closure to capture the target path correctly
+            def make_bc_cb(target_path):
+                return lambda: setattr(st.session_state, "github_explorer_path", target_path)
+            st.button(p, key=f"bc_btn_{idx}", on_click=make_bc_cb(running_path), use_container_width=True)
+            
+    st.markdown("---")
+    
+    with st.spinner("Fetching contents..."):
+        contents = list_repo_contents(repo_name, path, access_token)
+        
+    if not contents:
+        st.info("This folder is empty or couldn't be loaded.")
+        st.stop()
+        
+    # Sort folders first, then files
+    folders = [item for item in contents if item.get("type") == "dir"]
+    files = [item for item in contents if item.get("type") == "file"]
+    
+    # Back button if we are not at root
+    if path:
+        parent_path = "/".join(parts[:-1])
+        if st.button("⬅️ Go Up (Parent Directory)", key="go_up_dir_btn"):
+            st.session_state.github_explorer_path = parent_path
+            st.rerun()
+            
+    # Display folders
+    if folders:
+        st.markdown("#### Folders")
+        # Layout in 3-column grid for folders
+        folder_cols = st.columns(3)
+        for idx, folder in enumerate(folders):
+            col_idx = idx % 3
+            folder_name = folder.get("name")
+            folder_path = folder.get("path")
+            with folder_cols[col_idx]:
+                def make_folder_cb(target_path):
+                    return lambda: setattr(st.session_state, "github_explorer_path", target_path)
+                st.button(f"📁 {folder_name}", key=f"folder_{idx}", on_click=make_folder_cb(folder_path), use_container_width=True)
+                
+    # Display files
+    if files:
+        st.markdown("#### Files")
+        for idx, file_item in enumerate(files):
+            file_name = file_item.get("name")
+            file_path = file_item.get("path")
+            
+            # Show file row
+            with st.container():
+                fcol1, fcol2, fcol3 = st.columns([6, 2, 2])
+                with fcol1:
+                    st.markdown(f"📄 **{file_name}**")
+                    st.caption(f"Path: {file_path}")
+                with fcol2:
+                    if st.button("👁️ Preview", key=f"preview_file_{idx}", use_container_width=True):
+                        st.session_state[f"preview_{file_path}"] = True
+                with fcol3:
+                    if st.button("📎 Attach to Chat", key=f"attach_file_{idx}", use_container_width=True):
+                        with st.spinner(f"Downloading {file_name}..."):
+                            file_content = get_repo_file_content(repo_name, file_path, access_token)
+                            if file_content is not None:
+                                import_github_file_to_chat_context(file_content, file_name, repo_name)
+                                st.session_state.selected_nav = "Chat"
+                                st.success(f"Attached {file_name} to Chat!")
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.error(f"Failed to fetch content for {file_name}. It may be a binary file or too large.")
+                                
+            # Preview expander if active
+            if st.session_state.get(f"preview_{file_path}", False):
+                with st.spinner("Loading preview..."):
+                    file_content = get_repo_file_content(repo_name, file_path, access_token)
+                if file_content is not None:
+                    with st.expander(f"Preview: {file_name}", expanded=True):
+                        # Detect syntax language from file extension
+                        ext = file_name.split(".")[-1] if "." in file_name else ""
+                        st.code(file_content, language=ext)
+                        if st.button("Close Preview", key=f"close_preview_{idx}"):
+                            st.session_state[f"preview_{file_path}"] = False
+                            st.rerun()
+                else:
+                    st.error("Failed to load file preview. File may be binary or too large.")
+                    if st.button("Close", key=f"close_preview_err_{idx}"):
+                        st.session_state[f"preview_{file_path}"] = False
+                        st.rerun()
+                st.markdown("---")
+
+def import_github_file_to_chat_context(content: str, filename: str, repo_fullname: str):
+    st.session_state.cb_file_text = content
+    st.session_state.cb_img_bytes = None
+    st.session_state.cb_img_mime = None
+    st.session_state.cb_df = None
+    st.session_state.cb_df_name = ""
+    
+    # Save attachment record
+    save_attachment_record(filename, "text/plain", source="github")
+    
+    ensure_active_conversation()
+    
+    user_msg = f"Imported file: {filename} from repository {repo_fullname}"
+    assistant_msg = f"📄 **{filename}** has been successfully imported from GitHub ({repo_fullname}) and attached to this conversation. You can now ask questions about the code!"
+    
+    st.session_state.cb_messages.append({
+        "role": "user",
+        "content": user_msg,
+        "snippet": filename
+    })
+    st.session_state.cb_messages.append({
+        "role": "assistant",
+        "content": assistant_msg
+    })
+    
+    if db_enabled() and st.session_state.active_conversation_id:
+        db_action(save_message, int(st.session_state.active_conversation_id), "user", user_msg, filename)
+        db_action(save_message, int(st.session_state.active_conversation_id), "assistant", assistant_msg)
+
 def start_new_chat():
     sync_active_conversation()
     st.session_state.cb_messages = []
@@ -2933,6 +3185,28 @@ def render_sidebar():
             st.session_state.selected_nav = "Webhooks"
             st.rerun()
 
+        # Load GitHub Credentials to see if Explorer should be shown
+        github_creds = st.session_state.get("github_credentials")
+        if github_creds is None:
+            if db_enabled() and st.session_state.db_user_id:
+                from database import load_github_credentials
+                db_creds = db_action(load_github_credentials, st.session_state.db_user_id)
+                if db_creds:
+                    github_creds = db_creds
+                    st.session_state.github_credentials = db_creds
+                else:
+                    st.session_state.github_credentials = False
+                    github_creds = False
+            else:
+                st.session_state.github_credentials = False
+                github_creds = False
+        
+        github_linked = bool(github_creds)
+        if github_linked:
+            if st.button("GitHub Repository Explorer 📁", key="feature_Github_Explorer", use_container_width=True):
+                st.session_state.selected_nav = "GitHub Explorer"
+                st.rerun()
+
         # --- Google integration status and controls ---
         st.markdown('<div class="side-section-title">Google Integration</div>', unsafe_allow_html=True)
         
@@ -2989,6 +3263,39 @@ def render_sidebar():
                 f"state=connect_google"
             )
             st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
+
+        # --- GitHub integration status and controls ---
+        st.markdown('<div class="side-section-title">GitHub Integration</div>', unsafe_allow_html=True)
+        if github_linked:
+            st.markdown(
+                """
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                    <span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">🟢 GitHub Connected</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            if st.button("Disconnect GitHub Account", key="disconnect_github_btn", use_container_width=True):
+                st.session_state.github_credentials = False
+                if db_enabled() and st.session_state.db_user_id:
+                    from database import delete_github_credentials
+                    db_action(delete_github_credentials, st.session_state.db_user_id)
+                st.success("Disconnected GitHub Account!")
+                st.rerun()
+        else:
+            if GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
+                import urllib.parse
+                github_oauth_scope = "repo read:user"
+                github_auth_url = (
+                    f"https://github.com/login/oauth/authorize?"
+                    f"client_id={GITHUB_CLIENT_ID}&"
+                    f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
+                    f"scope={urllib.parse.quote(github_oauth_scope)}&"
+                    f"state=connect_github"
+                )
+                st.markdown(f'<a href="{github_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #24292e; background:#24292e; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#444d56\'" onmouseout="this.style.background=\'#24292e\'">🔗 Connect GitHub</button></a>', unsafe_allow_html=True)
+            else:
+                st.caption("ℹ️ Configure GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to enable GitHub connection.")
 
 
 
@@ -3065,6 +3372,11 @@ if st.session_state.selected_nav == "Search Chats":
             
     search_chats_block()
     record_profiler_checkpoint("Search Chats View")
+    st.stop()
+
+if st.session_state.selected_nav == "GitHub Explorer":
+    render_github_explorer()
+    record_profiler_checkpoint("GitHub Explorer View")
     st.stop()
 
 if st.session_state.selected_nav == "Documents":

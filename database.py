@@ -178,16 +178,25 @@ class SQLiteCursorWrapper:
     def execute(self, query, params=None):
         # Translate placeholder %s to ?
         query = query.replace("%s", "?")
-        # Handle ON DUPLICATE KEY UPDATE in google_credentials
+        # Handle ON DUPLICATE KEY UPDATE in google_credentials & github_credentials
         if "ON DUPLICATE KEY UPDATE" in query:
-            query = """
-            INSERT INTO google_credentials (user_id, access_token, refresh_token, expires_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET
-                access_token = excluded.access_token,
-                refresh_token = COALESCE(NULLIF(excluded.refresh_token, ''), refresh_token),
-                expires_at = excluded.expires_at
-            """
+            if "google_credentials" in query:
+                query = """
+                INSERT INTO google_credentials (user_id, access_token, refresh_token, expires_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    access_token = excluded.access_token,
+                    refresh_token = COALESCE(NULLIF(excluded.refresh_token, ''), refresh_token),
+                    expires_at = excluded.expires_at
+                """
+            elif "github_credentials" in query:
+                query = """
+                INSERT INTO github_credentials (user_id, access_token, scope)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    access_token = excluded.access_token,
+                    scope = excluded.scope
+                """
         if params is None:
             self.cursor.execute(query)
         else:
@@ -355,6 +364,16 @@ SQLITE_SCHEMA_STATEMENTS = [
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS github_credentials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        access_token TEXT NOT NULL,
+        scope TEXT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
     """
 ]
 
@@ -454,6 +473,16 @@ SCHEMA_STATEMENTS = [
         access_token TEXT NOT NULL,
         refresh_token TEXT NOT NULL,
         expires_at DOUBLE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS github_credentials (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL UNIQUE,
+        access_token TEXT NOT NULL,
+        scope TEXT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -993,6 +1022,41 @@ def delete_google_credentials(user_id: int) -> None:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM google_credentials WHERE user_id = %s", (user_id,))
+        cursor.close()
+
+
+def save_github_credentials(user_id: int, access_token: str, scope: str = "") -> None:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO github_credentials (user_id, access_token, scope)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                access_token = VALUES(access_token),
+                scope = VALUES(scope)
+            """,
+            (user_id, access_token, scope),
+        )
+        cursor.close()
+
+
+def load_github_credentials(user_id: int) -> dict[str, Any] | None:
+    with get_connection() as conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT access_token, scope FROM github_credentials WHERE user_id = %s",
+            (user_id,),
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        return row
+
+
+def delete_github_credentials(user_id: int) -> None:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM github_credentials WHERE user_id = %s", (user_id,))
         cursor.close()
 
 
