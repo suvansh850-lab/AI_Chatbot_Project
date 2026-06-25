@@ -631,7 +631,7 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
 }
 
 /* Styling for horizontal alignment of action buttons in the column */
-div[data-testid="column"]:has(.action-buttons-anchor) div[data-testid="stVerticalBlock"] {
+div[data-testid="column"]:has(#action-buttons-anchor) div:has(> div.element-container) {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
@@ -640,13 +640,13 @@ div[data-testid="column"]:has(.action-buttons-anchor) div[data-testid="stVertica
 }
 
 /* Hide the anchor container completely */
-div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(.action-buttons-anchor) {
+div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(#action-buttons-anchor) {
     display: none !important;
 }
 
 /* Constrain the Google Docs button container and copy iframe container to 33px square */
-div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(button),
-div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(iframe) {
+div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(button),
+div[data-testid="column"]:has(#action-buttons-anchor) div.element-container:has(iframe) {
     width: 33px !important;
     height: 33px !important;
     min-width: 33px !important;
@@ -658,7 +658,7 @@ div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(
 }
 
 /* Ensure the button itself is styled exactly like the copy button */
-div[data-testid="column"]:has(.action-buttons-anchor) button {
+div[data-testid="column"]:has(#action-buttons-anchor) button {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -679,17 +679,17 @@ div[data-testid="column"]:has(.action-buttons-anchor) button {
     box-sizing: border-box !important;
 }
 
-div[data-testid="column"]:has(.action-buttons-anchor) button:hover {
+div[data-testid="column"]:has(#action-buttons-anchor) button:hover {
     background-color: #f5f2eb !important;
     border-color: #da7756 !important;
     color: #da7756 !important;
 }
 
-div[data-testid="column"]:has(.action-buttons-anchor) button:active {
+div[data-testid="column"]:has(#action-buttons-anchor) button:active {
     transform: scale(0.95) !important;
 }
 
-div[data-testid="column"]:has(.action-buttons-anchor) button:focus {
+div[data-testid="column"]:has(#action-buttons-anchor) button:focus {
     box-shadow: none !important;
     outline: none !important;
     border-color: #e5e3d9 !important;
@@ -697,13 +697,13 @@ div[data-testid="column"]:has(.action-buttons-anchor) button:focus {
     color: #6b685c !important;
 }
 
-div[data-testid="column"]:has(.action-buttons-anchor) button:focus:hover {
+div[data-testid="column"]:has(#action-buttons-anchor) button:focus:hover {
     border-color: #da7756 !important;
     background-color: #f5f2eb !important;
     color: #da7756 !important;
 }
 
-div[data-testid="column"]:has(.action-buttons-anchor) button:disabled {
+div[data-testid="column"]:has(#action-buttons-anchor) button:disabled {
     opacity: 0.5 !important;
     cursor: not-allowed !important;
     background-color: #fbfaf7 !important;
@@ -712,19 +712,19 @@ div[data-testid="column"]:has(.action-buttons-anchor) button:disabled {
 }
 
 /* Insert FontAwesome icon into the Google Docs button */
-div[data-testid="column"]:has(.action-buttons-anchor) button::before {
+div[data-testid="column"]:has(#action-buttons-anchor) button::before {
     content: "\\f15b" !important; /* FontAwesome fa-file-lines regular */
     font-family: "Font Awesome 6 Free" !important;
     font-weight: 400 !important;
 }
 
 /* Hide the text label of the button */
-div[data-testid="column"]:has(.action-buttons-anchor) button p {
+div[data-testid="column"]:has(#action-buttons-anchor) button p {
     display: none !important;
 }
 
 /* Styling the copy iframe */
-div[data-testid="column"]:has(.action-buttons-anchor) iframe {
+div[data-testid="column"]:has(#action-buttons-anchor) iframe {
     width: 33px !important;
     height: 33px !important;
     border: none !important;
@@ -3661,7 +3661,7 @@ with chat_box:
                                     st.error(f"TTS error: {tts_err}")
 
                 with col_actions:
-                    st.markdown('<div class="action-buttons-anchor"></div>', unsafe_allow_html=True)
+                    st.markdown('<div id="action-buttons-anchor"></div>', unsafe_allow_html=True)
                     
                     # --- Per-message Google Docs Export ---
                     _gcreds_msg = st.session_state.get("google_credentials")
