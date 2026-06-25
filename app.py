@@ -3175,7 +3175,7 @@ with tc3:
         # --- Cloud Exports divider ---
         st.markdown(
             "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #e5e3d9;'>"
-            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>☁️ Cloud Export</div>",
+            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>Cloud Export</div>",
             unsafe_allow_html=True
         )
 
@@ -3196,7 +3196,7 @@ with tc3:
         gdocs_connected = bool(gdocs_access_token)
 
         if gdocs_connected and has_messages:
-            if st.button("📄 Export to Google Docs", use_container_width=True, key="btn_export_gdocs"):
+            if st.button("Export to Google Docs", use_container_width=True, key="btn_export_gdocs"):
                 from backend.export_service import export_to_google_docs, check_google_docs_scope
                 has_docs_scope = check_google_docs_scope(gdocs_access_token)
                 if not has_docs_scope:
@@ -3510,7 +3510,7 @@ with chat_box:
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
                 export_status_placeholder = st.empty()
-                col_listen, col_spacer, col_gdocs, col_copy = st.columns([1.8, 7.0, 0.6, 0.6], vertical_alignment="center")
+                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
@@ -3558,65 +3558,6 @@ with chat_box:
                                         st.error("Edge-TTS synthesis failed: No audio data returned.")
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
-
-                with col_gdocs:
-                    # --- Per-message Google Docs Export ---
-                    _gcreds_msg = st.session_state.get("google_credentials")
-                    _gtoken_msg = None
-                    if _gcreds_msg:
-                        try:
-                            from backend.google_service import get_valid_token as _gvt
-                            _gtoken_msg, _gup = _gvt(st.session_state.get("db_user_id"), _gcreds_msg)
-                            if _gup:
-                                st.session_state.google_credentials = _gup
-                        except Exception:
-                            _gtoken_msg = None
-                    _gdocs_ok_msg = bool(_gtoken_msg)
-                    
-                    if st.button(
-                        "📄",
-                        key=f"btn_gdocs_{idx}_{msg_hash}",
-                        disabled=not _gdocs_ok_msg,
-                        help="Export this response to Google Docs" if _gdocs_ok_msg else "Connect your Google account in the sidebar",
-                    ):
-                        from backend.export_service import export_to_google_docs, check_google_docs_scope
-                        _has_scope = check_google_docs_scope(_gtoken_msg)
-                        if not _has_scope:
-                            if GOOGLE_CLIENT_ID:
-                                import urllib.parse as _ulp
-                                _docs_scope = (
-                                    "openid email profile "
-                                    "https://www.googleapis.com/auth/gmail.compose "
-                                    "https://www.googleapis.com/auth/calendar "
-                                    "https://www.googleapis.com/auth/documents "
-                                    "https://www.googleapis.com/auth/drive.file"
-                                )
-                                _reauth = (
-                                    f"https://accounts.google.com/o/oauth2/v2/auth?"
-                                    f"client_id={GOOGLE_CLIENT_ID}&"
-                                    f"redirect_uri={_ulp.quote(GOOGLE_REDIRECT_URI)}&"
-                                    f"response_type=code&"
-                                    f"scope={_ulp.quote(_docs_scope)}&"
-                                    f"state=connect_google&"
-                                    f"access_type=offline&"
-                                    f"prompt=consent"
-                                )
-                                export_status_placeholder.warning(f"[Re-authorize Google]({_reauth}) to grant Docs access, then try again.")
-                            else:
-                                export_status_placeholder.error("Configure GOOGLE_CLIENT_ID to enable Google Docs export.")
-                        else:
-                            ist_tz_m = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
-                            _gdoc_title = f"AI Response — {datetime.datetime.now(ist_tz_m).strftime('%Y-%m-%d %H:%M')}"
-                            with st.spinner("Creating Google Doc..."):
-                                try:
-                                    _gdoc_url = export_to_google_docs(
-                                        [{"role": "assistant", "content": msg_content}],
-                                        title=_gdoc_title,
-                                        access_token=_gtoken_msg,
-                                    )
-                                    export_status_placeholder.success(f"✅ [Open Google Doc]({_gdoc_url})")
-                                except Exception as _ex:
-                                    export_status_placeholder.error(f"Google Docs export failed: {_ex}")
 
                 with col_copy:
                     # --- Per-message Copy Button ---
