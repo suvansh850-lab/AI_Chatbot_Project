@@ -3280,39 +3280,6 @@ with tc3:
             unsafe_allow_html=True
         )
 
-        # 4. Notion Export
-        notion_token = get_secret("NOTION_TOKEN", "")
-        notion_parent_id = get_secret("NOTION_PARENT_PAGE_ID", "")
-        notion_configured = bool(notion_token and notion_parent_id)
-
-        if notion_configured and has_messages:
-            if st.button("📝 Export to Notion", use_container_width=True, key="btn_export_notion"):
-                from backend.export_service import export_to_notion
-                conv_title = st.session_state.get("last_synced_title") or f"Chat {now_ist.strftime('%Y-%m-%d %H:%M')}"
-                with st.spinner("Creating Notion page..."):
-                    try:
-                        notion_url = export_to_notion(
-                            st.session_state.cb_messages,
-                            title=conv_title,
-                            notion_token=notion_token,
-                            parent_page_id=notion_parent_id,
-                        )
-                        st.session_state.export_status = ("notion", "success", notion_url)
-                        st.success("✅ Exported to Notion!")
-                        st.markdown(f"[🔗 Open in Notion]({notion_url})")
-                    except Exception as ex:
-                        st.error(f"Notion export failed: {ex}")
-        elif not notion_configured:
-            st.button(
-                "📝 Export to Notion",
-                disabled=True,
-                use_container_width=True,
-                help="Add NOTION_TOKEN and NOTION_PARENT_PAGE_ID to your secrets.toml to enable.",
-            )
-            st.caption("ℹ️ Set NOTION_TOKEN & NOTION_PARENT_PAGE_ID in secrets.toml to enable.")
-        else:
-            st.button("📝 Export to Notion", disabled=True, use_container_width=True)
-
         # 5. Google Docs Export
         google_creds_export = st.session_state.get("google_credentials")
         gdocs_access_token = None
@@ -3391,9 +3358,7 @@ if st.session_state.get("export_status"):
     _exp = st.session_state.export_status
     if _exp and len(_exp) == 3:
         _dest, _status, _url = _exp
-        if _dest == "notion" and _status == "success":
-            st.success(f"✅ Chat exported to Notion! [Open page]({_url})")
-        elif _dest == "gdocs" and _status == "success":
+        if _dest == "gdocs" and _status == "success":
             st.success(f"✅ Chat exported to Google Docs! [Open document]({_url})")
     st.session_state.export_status = None
 
