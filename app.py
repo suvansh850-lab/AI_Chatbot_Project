@@ -629,7 +629,74 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
     border-radius: 12px !important;
     padding-bottom: 10px !important;
 }
+
+/* Custom styling to turn st.button into a small icon button matching the copy button */
+div.gdoc-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+}
+div.gdoc-btn-wrapper div[data-testid="stButton"] {
+    display: inline-flex !important;
+    width: auto !important;
+}
+div.gdoc-btn-wrapper button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #fbfaf7 !important;
+    color: #6b685c !important;
+    border: 1px solid #e5e3d9 !important;
+    font-size: 1rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    user-select: none !important;
+    height: 33px !important;
+    width: 33px !important;
+    min-height: 33px !important;
+    min-width: 33px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+div.gdoc-btn-wrapper button:hover {
+    background-color: #f5f2eb !important;
+    border-color: #da7756 !important;
+    color: #da7756 !important;
+}
+div.gdoc-btn-wrapper button:active {
+    transform: scale(0.95) !important;
+}
+div.gdoc-btn-wrapper button:focus {
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: #e5e3d9 !important;
+    background-color: #fbfaf7 !important;
+    color: #6b685c !important;
+}
+div.gdoc-btn-wrapper button:focus:hover {
+    border-color: #da7756 !important;
+    background-color: #f5f2eb !important;
+    color: #da7756 !important;
+}
+div.gdoc-btn-wrapper button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background-color: #fbfaf7 !important;
+    border-color: #e5e3d9 !important;
+    color: #6b685c !important;
+}
+div.gdoc-btn-wrapper button::before {
+    content: "\\f1c2" !important; /* FontAwesome fa-file-word */
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+}
+/* Hide the text label of the button */
+div.gdoc-btn-wrapper button p {
+    display: none !important;
+}
 </style>
+
 """, unsafe_allow_html=True)
 
 
@@ -3541,7 +3608,8 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_listen, col_notion, col_gdocs, col_spacer, col_copy = st.columns([1.8, 1.6, 1.9, 4.1, 0.6], vertical_alignment="center")
+                export_status_placeholder = st.empty()
+                col_listen, col_spacer, col_gdocs, col_copy = st.columns([1.8, 7.0, 0.6, 0.6], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
@@ -3590,32 +3658,6 @@ with chat_box:
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
 
-                # --- Per-message Notion Export ---
-                with col_notion:
-                    _notion_token_msg = get_secret("NOTION_TOKEN", "")
-                    _notion_pid_msg   = get_secret("NOTION_PARENT_PAGE_ID", "")
-                    _notion_ok_msg    = bool(_notion_token_msg and _notion_pid_msg)
-                    if st.button(
-                        "📝 Notion",
-                        key=f"btn_notion_{idx}_{msg_hash}",
-                        disabled=not _notion_ok_msg,
-                        help="Export this response to Notion" if _notion_ok_msg else "Set NOTION_TOKEN & NOTION_PARENT_PAGE_ID in secrets.toml",
-                    ):
-                        from backend.export_service import export_to_notion
-                        ist_tz_m = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
-                        _msg_title = f"AI Response — {datetime.datetime.now(ist_tz_m).strftime('%Y-%m-%d %H:%M')}"
-                        with st.spinner("Exporting to Notion..."):
-                            try:
-                                _notion_url = export_to_notion(
-                                    [{"role": "assistant", "content": msg_content}],
-                                    title=_msg_title,
-                                    notion_token=_notion_token_msg,
-                                    parent_page_id=_notion_pid_msg,
-                                )
-                                st.success(f"✅ [Open in Notion]({_notion_url})")
-                            except Exception as _ex:
-                                st.error(f"Notion export failed: {_ex}")
-
                 # --- Per-message Google Docs Export ---
                 with col_gdocs:
                     _gcreds_msg = st.session_state.get("google_credentials")
@@ -3629,8 +3671,10 @@ with chat_box:
                         except Exception:
                             _gtoken_msg = None
                     _gdocs_ok_msg = bool(_gtoken_msg)
+                    
+                    st.markdown('<div class="gdoc-btn-wrapper">', unsafe_allow_html=True)
                     if st.button(
-                        "📄 Google Doc",
+                        " ",
                         key=f"btn_gdocs_{idx}_{msg_hash}",
                         disabled=not _gdocs_ok_msg,
                         help="Export this response to Google Docs" if _gdocs_ok_msg else "Connect your Google account in the sidebar",
@@ -3657,9 +3701,9 @@ with chat_box:
                                     f"access_type=offline&"
                                     f"prompt=consent"
                                 )
-                                st.warning(f"[Re-authorize Google]({_reauth}) to grant Docs access, then try again.")
+                                export_status_placeholder.warning(f"[Re-authorize Google]({_reauth}) to grant Docs access, then try again.")
                             else:
-                                st.error("Configure GOOGLE_CLIENT_ID to enable Google Docs export.")
+                                export_status_placeholder.error("Configure GOOGLE_CLIENT_ID to enable Google Docs export.")
                         else:
                             ist_tz_m = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
                             _gdoc_title = f"AI Response — {datetime.datetime.now(ist_tz_m).strftime('%Y-%m-%d %H:%M')}"
@@ -3670,9 +3714,10 @@ with chat_box:
                                         title=_gdoc_title,
                                         access_token=_gtoken_msg,
                                     )
-                                    st.success(f"✅ [Open Google Doc]({_gdoc_url})")
+                                    export_status_placeholder.success(f"✅ [Open Google Doc]({_gdoc_url})")
                                 except Exception as _ex:
-                                    st.error(f"Google Docs export failed: {_ex}")
+                                    export_status_placeholder.error(f"Google Docs export failed: {_ex}")
+                    st.markdown('</div>', unsafe_allow_html=True)
 
                 with col_copy:
                     render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
