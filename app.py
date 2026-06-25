@@ -3541,7 +3541,7 @@ with chat_box:
                 msg_content = msg["content"]
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
-                col_listen, col_spacer, col_copy = st.columns([1.8, 7.6, 0.6], vertical_alignment="center")
+                col_listen, col_notion, col_gdocs, col_spacer, col_copy = st.columns([1.8, 1.6, 1.9, 4.1, 0.6], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
@@ -3589,7 +3589,91 @@ with chat_box:
                                         st.error("Edge-TTS synthesis failed: No audio data returned.")
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
-                
+
+                # --- Per-message Notion Export ---
+                with col_notion:
+                    _notion_token_msg = get_secret("NOTION_TOKEN", "")
+                    _notion_pid_msg   = get_secret("NOTION_PARENT_PAGE_ID", "")
+                    _notion_ok_msg    = bool(_notion_token_msg and _notion_pid_msg)
+                    if st.button(
+                        "📝 Notion",
+                        key=f"btn_notion_{idx}_{msg_hash}",
+                        disabled=not _notion_ok_msg,
+                        help="Export this response to Notion" if _notion_ok_msg else "Set NOTION_TOKEN & NOTION_PARENT_PAGE_ID in secrets.toml",
+                    ):
+                        from backend.export_service import export_to_notion
+                        ist_tz_m = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+                        _msg_title = f"AI Response — {datetime.datetime.now(ist_tz_m).strftime('%Y-%m-%d %H:%M')}"
+                        with st.spinner("Exporting to Notion..."):
+                            try:
+                                _notion_url = export_to_notion(
+                                    [{"role": "assistant", "content": msg_content}],
+                                    title=_msg_title,
+                                    notion_token=_notion_token_msg,
+                                    parent_page_id=_notion_pid_msg,
+                                )
+                                st.success(f"✅ [Open in Notion]({_notion_url})")
+                            except Exception as _ex:
+                                st.error(f"Notion export failed: {_ex}")
+
+                # --- Per-message Google Docs Export ---
+                with col_gdocs:
+                    _gcreds_msg = st.session_state.get("google_credentials")
+                    _gtoken_msg = None
+                    if _gcreds_msg:
+                        try:
+                            from backend.google_service import get_valid_token as _gvt
+                            _gtoken_msg, _gup = _gvt(st.session_state.get("db_user_id"), _gcreds_msg)
+                            if _gup:
+                                st.session_state.google_credentials = _gup
+                        except Exception:
+                            _gtoken_msg = None
+                    _gdocs_ok_msg = bool(_gtoken_msg)
+                    if st.button(
+                        "📄 Google Doc",
+                        key=f"btn_gdocs_{idx}_{msg_hash}",
+                        disabled=not _gdocs_ok_msg,
+                        help="Export this response to Google Docs" if _gdocs_ok_msg else "Connect your Google account in the sidebar",
+                    ):
+                        from backend.export_service import export_to_google_docs, check_google_docs_scope
+                        _has_scope = check_google_docs_scope(_gtoken_msg)
+                        if not _has_scope:
+                            if GOOGLE_CLIENT_ID:
+                                import urllib.parse as _ulp
+                                _docs_scope = (
+                                    "openid email profile "
+                                    "https://www.googleapis.com/auth/gmail.compose "
+                                    "https://www.googleapis.com/auth/calendar "
+                                    "https://www.googleapis.com/auth/documents "
+                                    "https://www.googleapis.com/auth/drive.file"
+                                )
+                                _reauth = (
+                                    f"https://accounts.google.com/o/oauth2/v2/auth?"
+                                    f"client_id={GOOGLE_CLIENT_ID}&"
+                                    f"redirect_uri={_ulp.quote(GOOGLE_REDIRECT_URI)}&"
+                                    f"response_type=code&"
+                                    f"scope={_ulp.quote(_docs_scope)}&"
+                                    f"state=connect_google&"
+                                    f"access_type=offline&"
+                                    f"prompt=consent"
+                                )
+                                st.warning(f"[Re-authorize Google]({_reauth}) to grant Docs access, then try again.")
+                            else:
+                                st.error("Configure GOOGLE_CLIENT_ID to enable Google Docs export.")
+                        else:
+                            ist_tz_m = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+                            _gdoc_title = f"AI Response — {datetime.datetime.now(ist_tz_m).strftime('%Y-%m-%d %H:%M')}"
+                            with st.spinner("Creating Google Doc..."):
+                                try:
+                                    _gdoc_url = export_to_google_docs(
+                                        [{"role": "assistant", "content": msg_content}],
+                                        title=_gdoc_title,
+                                        access_token=_gtoken_msg,
+                                    )
+                                    st.success(f"✅ [Open Google Doc]({_gdoc_url})")
+                                except Exception as _ex:
+                                    st.error(f"Google Docs export failed: {_ex}")
+
                 with col_copy:
                     render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
                 
