@@ -152,7 +152,7 @@ def get_or_create_telegram_conversation(user_id: int) -> int:
     except Exception as e:
         print(f"Error finding conversation: {e}")
         
-    return create_conversation(user_id, title="Telegram Conversation", provider="Gemini")
+    return create_conversation(user_id, title="Telegram Conversation", provider="Groq")
 
 
 def send_whatsapp_message(access_token: str, phone_number_id: str, to_number: str, text: str):
@@ -196,7 +196,7 @@ def get_or_create_whatsapp_conversation(user_id: int) -> int:
     except Exception as e:
         print(f"Error finding conversation: {e}")
         
-    return create_conversation(user_id, title="WhatsApp Conversation", provider="Gemini")
+    return create_conversation(user_id, title="WhatsApp Conversation", provider="Groq")
 
 
 @app.post("/webhook/telegram")
@@ -234,7 +234,7 @@ async def webhook_telegram(request: Request):
     # 4. Generate response using AI Service
     chat_req = ChatRequest(
         prompt=text_body,
-        provider="Gemini",
+        provider="Groq",
         conversation_id=conversation_id,
         messages=[],
         document_text="",
@@ -260,7 +260,7 @@ async def webhook_telegram(request: Request):
         try:
             save_api_log(
                 conversation_id,
-                "Gemini",
+                "Groq",
                 model_name,
                 text_body,
                 reply_text
@@ -344,7 +344,7 @@ async def webhook_whatsapp(request: Request):
     # 4. Generate response using AI Service
     chat_req = ChatRequest(
         prompt=text_body,
-        provider="Gemini",
+        provider="Groq",
         conversation_id=conversation_id,
         messages=[],
         document_text="",
@@ -370,7 +370,7 @@ async def webhook_whatsapp(request: Request):
         try:
             save_api_log(
                 conversation_id,
-                "Gemini",
+                "Groq",
                 model_name,
                 text_body,
                 reply_text
