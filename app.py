@@ -2855,7 +2855,7 @@ def render_sidebar():
             st.markdown(
                 """
                 <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
-                    <span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">🟢 Gmail & Calendar Connected</span>
+                    <span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">🟢 Google Services Connected</span>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -2868,7 +2868,13 @@ def render_sidebar():
                 st.success("Disconnected Google Account!")
                 st.rerun()
         else:
-            google_oauth_scopes = "https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/calendar.events openid email profile"
+            google_oauth_scopes = (
+                "https://www.googleapis.com/auth/gmail.compose "
+                "https://www.googleapis.com/auth/calendar.events "
+                "https://www.googleapis.com/auth/documents "
+                "https://www.googleapis.com/auth/drive.file "
+                "openid email profile"
+            )
             import urllib.parse
             google_auth_url = (
                 f"https://accounts.google.com/o/oauth2/v2/auth?"
@@ -2880,7 +2886,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Gmail & Calendar</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
 
 
 
@@ -3175,7 +3181,7 @@ with tc3:
         # --- Google Docs Export divider ---
         st.markdown(
             "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #e5e3d9;'>"
-            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>☁️ Google Docs Export</div>",
+            "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>Google Docs Export</div>",
             unsafe_allow_html=True
         )
 
