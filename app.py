@@ -630,16 +630,35 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
     padding-bottom: 10px !important;
 }
 
-/* Custom styling to turn st.button into a small icon button matching the copy button */
-div.gdoc-btn-wrapper {
-    display: flex;
-    justify-content: flex-end;
+/* Styling for horizontal alignment of action buttons in the column */
+div[data-testid="column"]:has(.action-buttons-anchor) div[data-testid="stVerticalBlock"] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
 }
-div.gdoc-btn-wrapper div[data-testid="stButton"] {
-    display: inline-flex !important;
-    width: auto !important;
+
+/* Hide the anchor container completely */
+div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(.action-buttons-anchor) {
+    display: none !important;
 }
-div.gdoc-btn-wrapper button {
+
+/* Constrain the Google Docs button container and copy iframe container to 33px square */
+div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(button),
+div[data-testid="column"]:has(.action-buttons-anchor) div.element-container:has(iframe) {
+    width: 33px !important;
+    height: 33px !important;
+    min-width: 33px !important;
+    min-height: 33px !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure the button itself is styled exactly like the copy button */
+div[data-testid="column"]:has(.action-buttons-anchor) button {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -659,41 +678,59 @@ div.gdoc-btn-wrapper button {
     margin: 0 !important;
     box-sizing: border-box !important;
 }
-div.gdoc-btn-wrapper button:hover {
+
+div[data-testid="column"]:has(.action-buttons-anchor) button:hover {
     background-color: #f5f2eb !important;
     border-color: #da7756 !important;
     color: #da7756 !important;
 }
-div.gdoc-btn-wrapper button:active {
+
+div[data-testid="column"]:has(.action-buttons-anchor) button:active {
     transform: scale(0.95) !important;
 }
-div.gdoc-btn-wrapper button:focus {
+
+div[data-testid="column"]:has(.action-buttons-anchor) button:focus {
     box-shadow: none !important;
     outline: none !important;
     border-color: #e5e3d9 !important;
     background-color: #fbfaf7 !important;
     color: #6b685c !important;
 }
-div.gdoc-btn-wrapper button:focus:hover {
+
+div[data-testid="column"]:has(.action-buttons-anchor) button:focus:hover {
     border-color: #da7756 !important;
     background-color: #f5f2eb !important;
     color: #da7756 !important;
 }
-div.gdoc-btn-wrapper button:disabled {
+
+div[data-testid="column"]:has(.action-buttons-anchor) button:disabled {
     opacity: 0.5 !important;
     cursor: not-allowed !important;
     background-color: #fbfaf7 !important;
     border-color: #e5e3d9 !important;
     color: #6b685c !important;
 }
-div.gdoc-btn-wrapper button::before {
-    content: "\\f1c2" !important; /* FontAwesome fa-file-word */
+
+/* Insert FontAwesome icon into the Google Docs button */
+div[data-testid="column"]:has(.action-buttons-anchor) button::before {
+    content: "\\f15b" !important; /* FontAwesome fa-file-lines regular */
     font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
+    font-weight: 400 !important;
 }
+
 /* Hide the text label of the button */
-div.gdoc-btn-wrapper button p {
+div[data-testid="column"]:has(.action-buttons-anchor) button p {
     display: none !important;
+}
+
+/* Styling the copy iframe */
+div[data-testid="column"]:has(.action-buttons-anchor) iframe {
+    width: 33px !important;
+    height: 33px !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 </style>
 
@@ -3400,12 +3437,12 @@ def render_copy_button(text, key):
         <style>
             body {{
                 margin: 0;
-                padding: 0 10px 0 0;
+                padding: 0;
                 overflow: hidden;
                 background-color: transparent;
                 display: flex;
-                justify-content: flex-end;
-                align-items: flex-start;
+                justify-content: center;
+                align-items: center;
                 height: 33px;
             }}
             .copy-btn {{
@@ -3609,7 +3646,7 @@ with chat_box:
                 msg_hash = hashlib.md5(msg_content.encode("utf-8")).hexdigest()
                 
                 export_status_placeholder = st.empty()
-                col_listen, col_spacer, col_gdocs, col_copy = st.columns([1.8, 7.0, 0.6, 0.6], vertical_alignment="center")
+                col_listen, col_spacer, col_actions = st.columns([1.8, 7.0, 1.2], vertical_alignment="center")
                 with col_listen:
                     if st.button("🔊 Listen", key=f"btn_listen_{idx}_{msg_hash}"):
                         st.session_state[f"play_{idx}_{msg_hash}"] = True
@@ -3658,8 +3695,10 @@ with chat_box:
                                 except Exception as tts_err:
                                     st.error(f"TTS error: {tts_err}")
 
-                # --- Per-message Google Docs Export ---
-                with col_gdocs:
+                with col_actions:
+                    st.markdown('<div class="action-buttons-anchor"></div>', unsafe_allow_html=True)
+                    
+                    # --- Per-message Google Docs Export ---
                     _gcreds_msg = st.session_state.get("google_credentials")
                     _gtoken_msg = None
                     if _gcreds_msg:
@@ -3672,7 +3711,6 @@ with chat_box:
                             _gtoken_msg = None
                     _gdocs_ok_msg = bool(_gtoken_msg)
                     
-                    st.markdown('<div class="gdoc-btn-wrapper">', unsafe_allow_html=True)
                     if st.button(
                         " ",
                         key=f"btn_gdocs_{idx}_{msg_hash}",
@@ -3717,9 +3755,8 @@ with chat_box:
                                     export_status_placeholder.success(f"✅ [Open Google Doc]({_gdoc_url})")
                                 except Exception as _ex:
                                     export_status_placeholder.error(f"Google Docs export failed: {_ex}")
-                    st.markdown('</div>', unsafe_allow_html=True)
 
-                with col_copy:
+                    # --- Per-message Copy Button ---
                     render_copy_button(msg_content, f"copy_{idx}_{msg_hash}")
                 
                 if st.session_state.get(f"play_{idx}_{msg_hash}", False) and msg_hash in st.session_state.tts_audio_cache:
