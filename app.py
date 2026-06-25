@@ -2482,9 +2482,9 @@ def render_google_drive_upload():
 def render_github_explorer():
     col1, col2 = st.columns([9, 1])
     with col1:
-        st.subheader("GitHub Repository Explorer 📁")
+        st.subheader("GitHub Repository Explorer")
     with col2:
-        if st.button("❌", key="close_github_explorer", use_container_width=True):
+        if st.button("Close", key="close_github_explorer", use_container_width=True):
             st.session_state.selected_nav = "Chat"
             st.rerun()
             
@@ -2492,7 +2492,7 @@ def render_github_explorer():
     
     github_creds = st.session_state.get("github_credentials")
     if not github_creds:
-        st.warning("⚠️ GitHub not connected. Please connect your account in the sidebar.")
+        st.warning("GitHub not connected. Please connect your account in the sidebar.")
         st.stop()
         
     access_token = github_creds.get("access_token")
@@ -2577,7 +2577,7 @@ def render_github_explorer():
     # Back button if we are not at root
     if path:
         parent_path = "/".join(parts[:-1])
-        if st.button("⬅️ Go Up (Parent Directory)", key="go_up_dir_btn"):
+        if st.button("Go Up (Parent Directory)", key="go_up_dir_btn"):
             st.session_state.github_explorer_path = parent_path
             st.rerun()
             
@@ -2606,13 +2606,13 @@ def render_github_explorer():
             with st.container():
                 fcol1, fcol2, fcol3 = st.columns([6, 2, 2])
                 with fcol1:
-                    st.markdown(f"📄 **{file_name}**")
+                    st.markdown(f"**{file_name}**")
                     st.caption(f"Path: {file_path}")
                 with fcol2:
-                    if st.button("👁️ Preview", key=f"preview_file_{idx}", use_container_width=True):
+                    if st.button("Preview", key=f"preview_file_{idx}", use_container_width=True):
                         st.session_state[f"preview_{file_path}"] = True
                 with fcol3:
-                    if st.button("📎 Attach to Chat", key=f"attach_file_{idx}", use_container_width=True):
+                    if st.button("Attach to Chat", key=f"attach_file_{idx}", use_container_width=True):
                         with st.spinner(f"Downloading {file_name}..."):
                             file_content = get_repo_file_content(repo_name, file_path, access_token)
                             if file_content is not None:
@@ -3222,9 +3222,6 @@ def render_sidebar():
             st.session_state.selected_nav = "Document Library"
             st.rerun()
 
-        if st.button("Integration Webhooks 🔌", key="feature_Webhooks", use_container_width=True):
-            st.session_state.selected_nav = "Webhooks"
-            st.rerun()
 
         # Load GitHub Credentials to see if Explorer should be shown
         github_creds = st.session_state.get("github_credentials")
@@ -3443,11 +3440,6 @@ if st.session_state.selected_nav == "Google Drive Upload":
 if st.session_state.selected_nav == "Document Library":
     render_document_library()
     record_profiler_checkpoint("Document Library View")
-    st.stop()
-
-if st.session_state.selected_nav == "Webhooks":
-    render_webhooks_integration()
-    record_profiler_checkpoint("Webhooks View")
     st.stop()
 
 if st.session_state.selected_nav == "History":
