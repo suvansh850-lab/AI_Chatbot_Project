@@ -126,6 +126,36 @@ GOOGLE_REDIRECT_URI = get_secret("GOOGLE_REDIRECT_URI", "https://aichatbotprojec
 GITHUB_CLIENT_ID = get_secret("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = get_secret("GITHUB_CLIENT_SECRET", "")
 
+import hashlib
+import time
+
+def generate_signed_github_state(username: str) -> str:
+    timestamp = int(time.time())
+    secret = GITHUB_CLIENT_SECRET or LOGIN_PASSWORD or "fallback_secret"
+    raw_str = f"connect_github:{username}:{timestamp}"
+    signature = hashlib.sha256(f"{raw_str}:{secret}".encode("utf-8")).hexdigest()
+    return f"{raw_str}:{signature}"
+
+def verify_signed_github_state(state_str: str) -> str | None:
+    if not state_str:
+        return None
+    try:
+        parts = state_str.split(":")
+        if len(parts) != 4 or parts[0] != "connect_github":
+            return None
+        _, username, timestamp_str, signature = parts
+        timestamp = int(timestamp_str)
+        if abs(time.time() - timestamp) > 900:
+            return None
+        secret = GITHUB_CLIENT_SECRET or LOGIN_PASSWORD or "fallback_secret"
+        expected_raw = f"connect_github:{username}:{timestamp}"
+        expected_signature = hashlib.sha256(f"{expected_raw}:{secret}".encode("utf-8")).hexdigest()
+        if signature == expected_signature:
+            return username
+    except Exception:
+        pass
+    return None
+
 def get_login_password():
     return LOGIN_PASSWORD
 
@@ -811,6 +841,17 @@ def render_login_page():
                     st.error("Database is offline. Registration is currently unavailable.")
 
 
+# --- GitHub OAuth Autologin Handler for Session Resets ---
+if not st.session_state.get("authenticated"):
+    state = st.query_params.get("state")
+    if state and state.startswith("connect_github:"):
+        verified_username = verify_signed_github_state(state)
+        if verified_username:
+            st.session_state.authenticated = True
+            st.session_state.username = verified_username
+            st.session_state.recent_conversations = None
+            setup_database_session(show_errors=False)
+
 # --- Google OAuth Callback Handler ---
 if not st.session_state.get("authenticated") and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     auth_code = st.query_params.get("code")
@@ -901,7 +942,7 @@ if st.session_state.authenticated:
     auth_code = st.query_params.get("code")
     state = st.query_params.get("state")
     
-    if auth_code and state == "connect_github" and GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
+    if auth_code and state and state.startswith("connect_github") and GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
         st.markdown(f"""
         <img src="x" onerror="
             if (window.top.opener && window.top.opener !== window.top) {{
@@ -952,7 +993,7 @@ if st.session_state.authenticated:
                 except Exception as e:
                     st.error(f"GitHub OAuth linking failed: {e}")
                     
-    elif auth_code and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and state != "connect_github":
+    elif auth_code and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and not (state and state.startswith("connect_github")):
         st.markdown(f"""
         <img src="x" onerror="
             if (window.top.opener && window.top.opener !== window.top) {{
@@ -3286,12 +3327,13 @@ def render_sidebar():
             if GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
                 import urllib.parse
                 github_oauth_scope = "repo read:user"
+                signed_state = generate_signed_github_state(st.session_state.get("username", ""))
                 github_auth_url = (
                     f"https://github.com/login/oauth/authorize?"
                     f"client_id={GITHUB_CLIENT_ID}&"
                     f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
                     f"scope={urllib.parse.quote(github_oauth_scope)}&"
-                    f"state=connect_github"
+                    f"state={urllib.parse.quote(signed_state)}"
                 )
                 st.markdown(f'<a href="{github_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #24292e; background:#24292e; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#444d56\'" onmouseout="this.style.background=\'#24292e\'">🔗 Connect GitHub</button></a>', unsafe_allow_html=True)
             else:
