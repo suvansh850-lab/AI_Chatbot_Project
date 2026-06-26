@@ -110,7 +110,9 @@ def execute_scheduled_task(task: dict):
     if conversation_id:
         db_msgs = load_messages(conversation_id)
         if db_msgs:
-            for m in db_msgs[:-1]:
+            # Keep only the last 10 messages to avoid exceeding provider TPM limits
+            recent_msgs = db_msgs[-11:-1] if len(db_msgs) > 11 else db_msgs[:-1]
+            for m in recent_msgs:
                 messages_history.append({
                     "role": m.get("role"),
                     "content": m.get("content")

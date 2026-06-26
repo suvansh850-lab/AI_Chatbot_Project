@@ -258,7 +258,9 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
             try:
                 db_msgs = load_messages(request.conversation_id)
                 if db_msgs:
-                    for msg in db_msgs:
+                    # Keep only the last 10 messages to avoid exceeding provider TPM limits
+                    recent_msgs = db_msgs[-10:]
+                    for msg in recent_msgs:
                         history_messages.append(
                             ChatMessage(role=msg["role"], content=msg["content"])
                         )
