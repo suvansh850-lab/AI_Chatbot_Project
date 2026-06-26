@@ -1971,7 +1971,7 @@ def render_scheduled_tasks():
     
     col1, col2 = st.columns([9, 1])
     with col1:
-        st.subheader("Scheduled AI Tasks")
+        st.subheader("Schedule AI Tasks")
     with col2:
         if st.button("❌", key="close_scheduled_tasks", use_container_width=True):
             st.session_state.selected_nav = "Chat"

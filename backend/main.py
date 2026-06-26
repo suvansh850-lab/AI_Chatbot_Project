@@ -130,6 +130,8 @@ def synthesize(request: SpeechSynthesisRequest):
 # ── Webhook Helpers and Routes ───────────────────────────────────────
 
 def send_telegram_message(token: str, chat_id: int, text: str):
+    if not text or not text.strip():
+        text = "⚠️ [Empty Response]: The AI model returned an empty response."
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
