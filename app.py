@@ -1977,11 +1977,6 @@ def render_scheduled_tasks():
             st.session_state.selected_nav = "Chat"
             st.rerun()
             
-    st.caption(
-        "Automate tasks and have your AI assistant execute prompts periodically. "
-        "Outputs will be saved directly into a dedicated conversation thread and, "
-        "if connected, forwarded to Telegram or WhatsApp."
-    )
     
     if not db_enabled():
         st.warning(
@@ -2005,6 +2000,15 @@ def render_scheduled_tasks():
         
     if is_integrated:
         st.success(f"🔔 **Mobile Notifications Enabled**: Output will be sent directly to your {integration_type}!")
+        st.caption(
+            "Automate tasks and have your AI assistant execute prompts periodically. "
+            f"Outputs will be saved directly into a dedicated conversation thread and forwarded to your {integration_type}."
+        )
+    else:
+        st.caption(
+            "Automate tasks and have your AI assistant execute prompts periodically. "
+            "Outputs will be saved directly into a dedicated conversation thread."
+        )
             
     # Load recent conversations for dropdown
     recent_convs = get_recent_conversations(limit=1000) or []
@@ -2059,11 +2063,14 @@ def render_scheduled_tasks():
                         else:
                             sched_desc = f"🕒 Cron: `{cron_expr}`"
                     else:
-                        hours = task.get("interval_seconds", 0) / 3600
-                        if hours.is_integer():
-                            sched_desc = f"🕒 Every `{int(hours)}` hour(s)"
+                        secs = task.get("interval_seconds", 0)
+                        if secs % 3600 == 0:
+                            sched_desc = f"🕒 Every `{int(secs / 3600)}` hour(s)"
+                        elif secs % 60 == 0:
+                            sched_desc = f"🕒 Every `{int(secs / 60)}` minute(s)"
                         else:
-                            sched_desc = f"🕒 Every `{hours:.1f}` hour(s)"
+                            hours = secs / 3600
+                            sched_desc = f"🕒 Every `{hours:.2f}` hour(s)"
                         
                     conv_id = task.get("conversation_id")
                     thread_desc = f"💬 Thread: **{conv_map.get(conv_id, 'None (Silent)')}**" if conv_id else "💬 Thread: **None (Silent)**"
@@ -2103,12 +2110,22 @@ def render_scheduled_tasks():
         thread_mode = "Create a new dedicated chat thread"
                 
         # Recurrence Selector
-        rec_type = st.radio("Recurrence Type", ["Interval (Hours)", "Daily Time"], horizontal=True, key="new_task_rec_type")
+        rec_type = st.radio("Recurrence Type", ["Interval (Minutes)", "Interval (Hours)", "Daily Time"], horizontal=True, key="new_task_rec_type")
         
         cron_expr = None
         interval_secs = None
         
-        if rec_type == "Interval (Hours)":
+        if rec_type == "Interval (Minutes)":
+            interval_mins = st.number_input(
+                "Interval (minutes)", 
+                min_value=1, 
+                max_value=43200, 
+                value=60, 
+                step=1, 
+                key="new_task_interval_mins"
+            )
+            interval_secs = int(interval_mins * 60)
+        elif rec_type == "Interval (Hours)":
             interval_hours = st.number_input(
                 "Interval (hours)", 
                 min_value=1, 
@@ -2168,7 +2185,7 @@ def render_scheduled_tasks():
                 t_name.strip(),
                 t_prompt.strip(),
                 cron_expr if rec_type == "Daily Time" else None,
-                interval_secs if rec_type == "Interval (Hours)" else None,
+                interval_secs if rec_type in ("Interval (Minutes)", "Interval (Hours)") else None,
                 next_run_at
             )
             
