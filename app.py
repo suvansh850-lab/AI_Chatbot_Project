@@ -1988,27 +1988,10 @@ def render_scheduled_tasks():
     username = st.session_state.get("username", "")
     user_id = st.session_state.db_user_id
     
-    # Check if the user is integrated via Telegram/WhatsApp
-    is_integrated = False
-    integration_type = ""
-    if username.startswith("telegram_"):
-        is_integrated = True
-        integration_type = "Telegram"
-    elif username.startswith("whatsapp_"):
-        is_integrated = True
-        integration_type = "WhatsApp"
-        
-    if is_integrated:
-        st.success(f"🔔 **Mobile Notifications Enabled**: Output will be sent directly to your {integration_type}!")
-        st.caption(
-            "Automate tasks and have your AI assistant execute prompts periodically. "
-            f"Outputs will be saved directly into a dedicated conversation thread and forwarded to your {integration_type}."
-        )
-    else:
-        st.caption(
-            "Automate tasks and have your AI assistant execute prompts periodically. "
-            "Outputs will be saved directly into a dedicated conversation thread."
-        )
+    st.caption(
+        "Automate tasks and have your AI assistant execute prompts periodically. "
+        "Outputs will be saved directly into a dedicated conversation thread."
+    )
             
     # Load recent conversations for dropdown
     recent_convs = get_recent_conversations(limit=1000) or []

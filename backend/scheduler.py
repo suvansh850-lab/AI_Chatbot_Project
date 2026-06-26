@@ -19,55 +19,7 @@ from .schemas import ChatRequest
 _scheduler_thread = None
 _stop_event = threading.Event()
 
-def send_telegram_message(token: str, chat_id: str, text: str):
-    if not text or not text.strip():
-        text = "⚠️ [Empty Response]: The AI model returned an empty response."
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "Markdown"
-    }
-    try:
-        res = requests.post(url, json=payload, timeout=10)
-        if res.status_code != 200:
-            payload.pop("parse_mode", None)
-            requests.post(url, json=payload, timeout=10)
-    except Exception as e:
-        print(f"Scheduler Telegram send error: {e}")
-
-def send_whatsapp_message(access_token: str, phone_number_id: str, to_number: str, text: str):
-    url = f"https://graph.facebook.com/v20.0/{phone_number_id}/messages"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": to_number,
-        "type": "text",
-        "text": {
-            "preview_url": False,
-            "body": text
-        }
-    }
-    try:
-        requests.post(url, json=payload, headers=headers, timeout=10)
-    except Exception as e:
-        print(f"Scheduler WhatsApp send error: {e}")
-
-def get_user_details(user_id: int) -> dict | None:
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
-            row = cursor.fetchone()
-            cursor.close()
-            return row
-    except Exception as e:
-        print(f"Scheduler failed to get user details: {e}")
-        return None
+# (Telegram and WhatsApp notifications removed from scheduled tasks module)
 
 def execute_scheduled_task(task: dict):
     task_id = task["id"]
@@ -141,23 +93,7 @@ def execute_scheduled_task(task: dict):
     if conversation_id:
         save_message(conversation_id, "assistant", answer)
         
-    # 4. Forward notification/message to Telegram or WhatsApp if user is a bot user
-    user_info = get_user_details(user_id)
-    if user_info:
-        username = user_info.get("username", "")
-        if username.startswith("telegram_"):
-            chat_id = username.split("_")[1]
-            token = get_secret("TELEGRAM_BOT_TOKEN", "")
-            if token and token != "your-telegram-bot-token":
-                msg_text = f"🔔 **Scheduled Task: {task_name}**\n\n{answer}"
-                send_telegram_message(token, chat_id, msg_text)
-        elif username.startswith("whatsapp_"):
-            to_number = username.split("_")[1]
-            access_token = get_secret("WHATSAPP_ACCESS_TOKEN", "")
-            phone_id = get_secret("WHATSAPP_PHONE_NUMBER_ID", "")
-            if access_token and phone_id and access_token != "your-whatsapp-access-token":
-                msg_text = f"🔔 Scheduled Task: {task_name}\n\n{answer}"
-                send_whatsapp_message(access_token, phone_id, to_number, msg_text)
+    # (Telegram and WhatsApp notification forwarding removed)
 
 def scheduler_loop():
     print("Background Task Scheduler thread started successfully.")
