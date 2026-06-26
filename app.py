@@ -2083,15 +2083,28 @@ def render_scheduled_tasks():
                         next_run = task.get("next_run_at")
                         last_run = task.get("last_run_at")
                         
-                        if isinstance(next_run, datetime.datetime):
-                            next_run_str = next_run.strftime("%Y-%m-%d %H:%M:%S")
+                        def to_ist(dt):
+                            if isinstance(dt, datetime.datetime):
+                                if dt.tzinfo is None:
+                                    utc_dt = dt.replace(tzinfo=datetime.timezone.utc)
+                                else:
+                                    utc_dt = dt
+                                ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+                                return utc_dt.astimezone(ist_tz)
+                            return dt
+
+                        next_run_ist = to_ist(next_run)
+                        last_run_ist = to_ist(last_run)
+                        
+                        if isinstance(next_run_ist, datetime.datetime):
+                            next_run_str = next_run_ist.strftime("%Y-%m-%d %H:%M:%S")
                         else:
-                            next_run_str = str(next_run) if next_run else "Never"
+                            next_run_str = str(next_run_ist) if next_run_ist else "Never"
                             
-                        if isinstance(last_run, datetime.datetime):
-                            last_run_str = last_run.strftime("%Y-%m-%d %H:%M:%S")
+                        if isinstance(last_run_ist, datetime.datetime):
+                            last_run_str = last_run_ist.strftime("%Y-%m-%d %H:%M:%S")
                         else:
-                            last_run_str = str(last_run) if last_run else "Never"
+                            last_run_str = str(last_run_ist) if last_run_ist else "Never"
                             
                         st.markdown(f"⏱️ Next Run: `{next_run_str}`\n\n⏱️ Last Run: `{last_run_str}`")
                         
