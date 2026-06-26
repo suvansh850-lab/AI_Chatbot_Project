@@ -119,7 +119,7 @@ def execute_scheduled_task(task: dict):
     # Build ChatRequest
     chat_req = ChatRequest(
         prompt=prompt,
-        provider="Gemini",
+        provider="Groq",
         conversation_id=conversation_id,
         messages=messages_history,
         document_text="",
