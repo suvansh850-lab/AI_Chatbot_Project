@@ -1,9 +1,8 @@
-"""FastAPI backend for the AI Chatbot project."""
-
 import sys
 import os
 import requests
-from fastapi import FastAPI, HTTPException, Request, Response
+import threading
+from fastapi import FastAPI, HTTPException, Request, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
 from .ai_service import generate_chat_response, get_active_model, transcribe_audio, generate_speech
@@ -213,8 +212,158 @@ def get_or_create_whatsapp_conversation(user_id: int) -> int:
     return create_conversation(user_id, title="WhatsApp Conversation", provider="Groq")
 
 
+# ── Webhook Deduplication and Async Processing ──────────────────────
+
+processed_telegram_updates = set()
+processed_telegram_updates_list = []
+telegram_lock = threading.Lock()
+
+def is_telegram_duplicate(update_id: int) -> bool:
+    with telegram_lock:
+        if update_id in processed_telegram_updates:
+            return True
+        processed_telegram_updates.add(update_id)
+        processed_telegram_updates_list.append(update_id)
+        if len(processed_telegram_updates_list) > 1000:
+            oldest = processed_telegram_updates_list.pop(0)
+            processed_telegram_updates.discard(oldest)
+        return False
+
+
+processed_whatsapp_messages = set()
+processed_whatsapp_messages_list = []
+whatsapp_lock = threading.Lock()
+
+def is_whatsapp_duplicate(message_id: str) -> bool:
+    with whatsapp_lock:
+        if message_id in processed_whatsapp_messages:
+            return True
+        processed_whatsapp_messages.add(message_id)
+        processed_whatsapp_messages_list.append(message_id)
+        if len(processed_whatsapp_messages_list) > 1000:
+            oldest = processed_whatsapp_messages_list.pop(0)
+            processed_whatsapp_messages.discard(oldest)
+        return False
+
+
+def process_telegram_webhook(chat_id: int, text_body: str, token: str):
+    if not ensure_user or not save_message:
+        return
+        
+    try:
+        # 1. Ensure user exists
+        username = f"telegram_{chat_id}"
+        user_id = ensure_user(username, "telegram_webhook_secret_pass")
+        
+        # 2. Get or create conversation thread
+        conversation_id = get_or_create_telegram_conversation(user_id)
+        
+        # 3. Save incoming user message
+        save_message(conversation_id, "user", text_body)
+        
+        # 4. Generate response using AI Service
+        chat_req = ChatRequest(
+            prompt=text_body,
+            provider="Groq",
+            conversation_id=conversation_id,
+            messages=[],
+            document_text="",
+            data_context="",
+            image_base64=None,
+            image_mime=None,
+            web_search=False
+        )
+        
+        try:
+            ai_resp = generate_chat_response(chat_req)
+            reply_text = ai_resp.answer
+            model_name = ai_resp.model
+        except Exception as e:
+            reply_text = f"Sorry, I encountered an error while generating a response: {str(e)}"
+            model_name = "error"
+            
+        # 5. Save assistant response
+        save_message(conversation_id, "assistant", reply_text)
+        
+        # 6. Save API log
+        if save_api_log:
+            try:
+                save_api_log(
+                    conversation_id,
+                    "Groq",
+                    model_name,
+                    text_body,
+                    reply_text
+                )
+            except Exception:
+                pass
+                
+        # 7. Send the message back via Telegram API
+        send_telegram_message(token, chat_id, reply_text)
+    except Exception as e:
+        print(f"Error in background telegram task: {e}")
+
+
+def process_whatsapp_webhook(access_token: str, phone_number_id: str, from_number: str, text_body: str):
+    if not ensure_user or not save_message:
+        return
+        
+    try:
+        # 1. Ensure user exists
+        username = f"whatsapp_{from_number}"
+        user_id = ensure_user(username, "whatsapp_webhook_secret_pass")
+        
+        # 2. Get or create conversation thread
+        conversation_id = get_or_create_whatsapp_conversation(user_id)
+        
+        # 3. Save incoming user message
+        save_message(conversation_id, "user", text_body)
+        
+        # 4. Generate response using AI Service
+        chat_req = ChatRequest(
+            prompt=text_body,
+            provider="Groq",
+            conversation_id=conversation_id,
+            messages=[],
+            document_text="",
+            data_context="",
+            image_base64=None,
+            image_mime=None,
+            web_search=False
+        )
+        
+        try:
+            ai_resp = generate_chat_response(chat_req)
+            reply_text = ai_resp.answer
+            model_name = ai_resp.model
+        except Exception as e:
+            reply_text = f"Sorry, I encountered an error while generating a response: {str(e)}"
+            model_name = "error"
+            
+        # 5. Save assistant response
+        save_message(conversation_id, "assistant", reply_text)
+        
+        # 6. Save API log
+        if save_api_log:
+            try:
+                save_api_log(
+                    conversation_id,
+                    "Groq",
+                    model_name,
+                    text_body,
+                    reply_text
+                )
+            except Exception:
+                pass
+                
+        # 7. Send the message back via WhatsApp Cloud API
+        send_whatsapp_message(access_token, phone_number_id, from_number, reply_text)
+    except Exception as e:
+        print(f"Error in background whatsapp task: {e}")
+
+
 @app.post("/webhook/telegram")
-async def webhook_telegram(request: Request):
+async def webhook_telegram(request: Request, background_tasks: BackgroundTasks):
     token = get_secret("TELEGRAM_BOT_TOKEN", "")
     if not token or token == "your-telegram-bot-token":
         raise HTTPException(status_code=400, detail="Telegram bot token not configured")
@@ -224,6 +373,11 @@ async def webhook_telegram(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
         
+    update_id = payload.get("update_id")
+    if update_id is not None:
+        if is_telegram_duplicate(update_id):
+            return {"status": "ignored", "reason": "duplicate update"}
+            
     message = payload.get("message", {})
     chat = message.get("chat", {})
     chat_id = chat.get("id")
@@ -232,60 +386,9 @@ async def webhook_telegram(request: Request):
     if not chat_id or not text_body:
         return {"status": "ignored", "reason": "no chat_id or text message"}
         
-    if not ensure_user or not save_message:
-        raise HTTPException(status_code=500, detail="Database support is currently unavailable")
-        
-    # 1. Ensure user exists
-    username = f"telegram_{chat_id}"
-    user_id = ensure_user(username, "telegram_webhook_secret_pass")
+    background_tasks.add_task(process_telegram_webhook, chat_id, text_body, token)
     
-    # 2. Get or create conversation thread
-    conversation_id = get_or_create_telegram_conversation(user_id)
-    
-    # 3. Save incoming user message
-    save_message(conversation_id, "user", text_body)
-    
-    # 4. Generate response using AI Service
-    chat_req = ChatRequest(
-        prompt=text_body,
-        provider="Groq",
-        conversation_id=conversation_id,
-        messages=[],
-        document_text="",
-        data_context="",
-        image_base64=None,
-        image_mime=None,
-        web_search=False
-    )
-    
-    try:
-        ai_resp = generate_chat_response(chat_req)
-        reply_text = ai_resp.answer
-        model_name = ai_resp.model
-    except Exception as e:
-        reply_text = f"Sorry, I encountered an error while generating a response: {str(e)}"
-        model_name = "error"
-        
-    # 5. Save assistant response
-    save_message(conversation_id, "assistant", reply_text)
-    
-    # 6. Save API log
-    if save_api_log:
-        try:
-            save_api_log(
-                conversation_id,
-                "Groq",
-                model_name,
-                text_body,
-                reply_text
-            )
-        except Exception:
-            pass
-            
-    # 7. Send the message back via Telegram API
-    send_telegram_message(token, chat_id, reply_text)
-    
-    return {"status": "success"}
+    return {"status": "accepted"}
 
 
 @app.get("/webhook/whatsapp")
@@ -305,7 +408,7 @@ async def webhook_whatsapp_verify(request: Request):
 
 
 @app.post("/webhook/whatsapp")
-async def webhook_whatsapp(request: Request):
+async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
     access_token = get_secret("WHATSAPP_ACCESS_TOKEN", "")
     phone_number_id = get_secret("WHATSAPP_PHONE_NUMBER_ID", "")
     
@@ -338,62 +441,16 @@ async def webhook_whatsapp(request: Request):
         
     from_number = message.get("from")
     text_body = message.get("text", {}).get("body")
+    message_id = message.get("id")
     
     if not from_number or not text_body:
         return {"status": "ignored", "reason": "missing phone number or body"}
         
-    if not ensure_user or not save_message:
-        raise HTTPException(status_code=500, detail="Database support is currently unavailable")
-        
-    # 1. Ensure user exists
-    username = f"whatsapp_{from_number}"
-    user_id = ensure_user(username, "whatsapp_webhook_secret_pass")
-    
-    # 2. Get or create conversation thread
-    conversation_id = get_or_create_whatsapp_conversation(user_id)
-    
-    # 3. Save incoming user message
-    save_message(conversation_id, "user", text_body)
-    
-    # 4. Generate response using AI Service
-    chat_req = ChatRequest(
-        prompt=text_body,
-        provider="Groq",
-        conversation_id=conversation_id,
-        messages=[],
-        document_text="",
-        data_context="",
-        image_base64=None,
-        image_mime=None,
-        web_search=False
-    )
-    
-    try:
-        ai_resp = generate_chat_response(chat_req)
-        reply_text = ai_resp.answer
-        model_name = ai_resp.model
-    except Exception as e:
-        reply_text = f"Sorry, I encountered an error while generating a response: {str(e)}"
-        model_name = "error"
-        
-    # 5. Save assistant response
-    save_message(conversation_id, "assistant", reply_text)
-    
-    # 6. Save API log
-    if save_api_log:
-        try:
-            save_api_log(
-                conversation_id,
-                "Groq",
-                model_name,
-                text_body,
-                reply_text
-            )
-        except Exception:
-            pass
+    if message_id is not None:
+        if is_whatsapp_duplicate(message_id):
+            return {"status": "ignored", "reason": "duplicate message"}
             
-    # 7. Send the message back via WhatsApp Cloud API
-    send_whatsapp_message(access_token, phone_number_id, from_number, reply_text)
+    background_tasks.add_task(process_whatsapp_webhook, access_token, phone_number_id, from_number, text_body)
     
-    return {"status": "success"}
+    return {"status": "accepted"}
 
