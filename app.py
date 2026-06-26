@@ -1971,7 +1971,7 @@ def render_scheduled_tasks():
     
     col1, col2 = st.columns([9, 1])
     with col1:
-        st.subheader("Scheduled AI Tasks ⏰")
+        st.subheader("Scheduled AI Tasks")
     with col2:
         if st.button("❌", key="close_scheduled_tasks", use_container_width=True):
             st.session_state.selected_nav = "Chat"
@@ -2005,15 +2005,6 @@ def render_scheduled_tasks():
         
     if is_integrated:
         st.success(f"🔔 **Mobile Notifications Enabled**: Output will be sent directly to your {integration_type}!")
-    else:
-        with st.expander("💡 Connect to Telegram or WhatsApp"):
-            st.markdown(
-                "You can receive scheduled reports, news summaries, and automated check-ins directly on your phone!\n\n"
-                "**How to connect:**\n"
-                "1. Sign out of this session.\n"
-                "2. Register or log in via our official Telegram Bot or WhatsApp Webhook integration.\n"
-                "3. Once connected, your schedules will automatically alert you on your phone."
-            )
             
     # Load recent conversations for dropdown
     recent_convs = get_recent_conversations(limit=1000) or []
@@ -2054,8 +2045,11 @@ def render_scheduled_tasks():
                     if task.get("cron_expression"):
                         sched_desc = f"🕒 Cron: `{task['cron_expression']}`"
                     else:
-                        minutes = int(task.get("interval_seconds", 0) / 60)
-                        sched_desc = f"🕒 Every `{minutes}` minute(s)"
+                        hours = task.get("interval_seconds", 0) / 3600
+                        if hours.is_integer():
+                            sched_desc = f"🕒 Every `{int(hours)}` hour(s)"
+                        else:
+                            sched_desc = f"🕒 Every `{hours:.1f}` hour(s)"
                         
                     conv_id = task.get("conversation_id")
                     thread_desc = f"💬 Thread: **{conv_map.get(conv_id, 'None (Silent)')}**" if conv_id else "💬 Thread: **None (Silent)**"
@@ -2113,21 +2107,21 @@ def render_scheduled_tasks():
                 thread_mode = "Create a new dedicated chat thread"
                 
         # Recurrence Selector
-        rec_type = st.radio("Recurrence Type", ["Interval (Minutes)", "Cron Schedule"], horizontal=True, key="new_task_rec_type")
+        rec_type = st.radio("Recurrence Type", ["Interval (Hours)", "Cron Schedule"], horizontal=True, key="new_task_rec_type")
         
         cron_expr = None
         interval_secs = None
         
-        if rec_type == "Interval (Minutes)":
-            interval_mins = st.number_input(
-                "Interval (minutes)", 
+        if rec_type == "Interval (Hours)":
+            interval_hours = st.number_input(
+                "Interval (hours)", 
                 min_value=1, 
-                max_value=43200, 
-                value=60, 
+                max_value=8760, 
+                value=1, 
                 step=1, 
-                key="new_task_interval_mins"
+                key="new_task_interval_hours"
             )
-            interval_secs = int(interval_mins * 60)
+            interval_secs = int(interval_hours * 3600)
         else:
             cron_expr = st.text_input(
                 "Cron Expression", 
@@ -2189,7 +2183,7 @@ def render_scheduled_tasks():
                 t_name.strip(),
                 t_prompt.strip(),
                 cron_clean if rec_type == "Cron Schedule" else None,
-                interval_secs if rec_type == "Interval (Minutes)" else None,
+                interval_secs if rec_type == "Interval (Hours)" else None,
                 next_run_at
             )
             
@@ -3463,7 +3457,7 @@ def render_sidebar():
             st.session_state.selected_nav = "Document Library"
             st.rerun()
 
-        if st.button("Scheduled Tasks ⏰", key="feature_Scheduled_Tasks", use_container_width=True):
+        if st.button("Scheduled Tasks", key="feature_Scheduled_Tasks", use_container_width=True):
             st.session_state.selected_nav = "Scheduled Tasks"
             st.rerun()
 
