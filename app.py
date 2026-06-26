@@ -2127,7 +2127,7 @@ def render_scheduled_tasks():
             )
             cron_expr = f"{execution_time.minute} {execution_time.hour} * * *"
             
-        if st.button("📅 Schedule Task", use_container_width=True, type="primary"):
+        if st.button("Schedule Task", use_container_width=True, type="primary"):
             if not t_name.strip():
                 st.error("Please enter a Task Name.")
                 st.stop()
@@ -3442,8 +3442,8 @@ def render_sidebar():
             st.session_state.selected_nav = "Document Library"
             st.rerun()
 
-        if st.button("Scheduled Tasks", key="feature_Scheduled_Tasks", use_container_width=True):
-            st.session_state.selected_nav = "Scheduled Tasks"
+        if st.button("Schedule Tasks", key="feature_Scheduled_Tasks", use_container_width=True):
+            st.session_state.selected_nav = "Schedule Tasks"
             st.rerun()
 
 
@@ -3666,7 +3666,7 @@ if st.session_state.selected_nav == "Document Library":
     record_profiler_checkpoint("Document Library View")
     st.stop()
 
-if st.session_state.selected_nav == "Scheduled Tasks":
+if st.session_state.selected_nav == "Schedule Tasks":
     render_scheduled_tasks()
     record_profiler_checkpoint("Scheduled Tasks View")
     st.stop()
