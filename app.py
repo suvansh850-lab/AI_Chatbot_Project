@@ -2042,8 +2042,22 @@ def render_scheduled_tasks():
                     st.code(task['prompt'], language="text")
                     
                     # Schedule Info
-                    if task.get("cron_expression"):
-                        sched_desc = f"🕒 Cron: `{task['cron_expression']}`"
+                    cron_expr = task.get("cron_expression")
+                    if cron_expr:
+                        # Check if it's a simple daily cron format: "m h * * *"
+                        parts = cron_expr.split()
+                        if len(parts) == 5 and parts[2] == "*" and parts[3] == "*" and parts[4] == "*":
+                            try:
+                                minute = int(parts[0])
+                                hour = int(parts[1])
+                                import datetime
+                                time_obj = datetime.time(hour, minute)
+                                time_str = time_obj.strftime("%I:%M %p").lstrip("0") # e.g. 9:00 AM
+                                sched_desc = f"🕒 Daily at `{time_str}`"
+                            except ValueError:
+                                sched_desc = f"🕒 Cron: `{cron_expr}`"
+                        else:
+                            sched_desc = f"🕒 Cron: `{cron_expr}`"
                     else:
                         hours = task.get("interval_seconds", 0) / 3600
                         if hours.is_integer():
@@ -2086,28 +2100,10 @@ def render_scheduled_tasks():
         )
         
         # Thread option selection
-        thread_mode = st.selectbox(
-            "Chat Thread Integration",
-            ["Create a new dedicated chat thread", "Link to an existing chat thread", "No chat thread"],
-            key="new_task_thread_mode"
-        )
-        
-        linked_conv_id = None
-        if thread_mode == "Link to an existing chat thread":
-            if recent_convs:
-                conv_opts = [f"{c['title']} (ID: {c['id']})" for c in recent_convs]
-                selected_opt = st.selectbox("Select Chat Thread", conv_opts, key="new_task_existing_conv")
-                # Extract ID
-                for c in recent_convs:
-                    if f"{c['title']} (ID: {c['id']})" == selected_opt:
-                        linked_conv_id = c["id"]
-                        break
-            else:
-                st.warning("No existing chats found. We will create a new dedicated chat thread instead.")
-                thread_mode = "Create a new dedicated chat thread"
+        thread_mode = "Create a new dedicated chat thread"
                 
         # Recurrence Selector
-        rec_type = st.radio("Recurrence Type", ["Interval (Hours)", "Cron Schedule"], horizontal=True, key="new_task_rec_type")
+        rec_type = st.radio("Recurrence Type", ["Interval (Hours)", "Daily Time"], horizontal=True, key="new_task_rec_type")
         
         cron_expr = None
         interval_secs = None
@@ -2123,19 +2119,13 @@ def render_scheduled_tasks():
             )
             interval_secs = int(interval_hours * 3600)
         else:
-            cron_expr = st.text_input(
-                "Cron Expression", 
-                value="0 9 * * 1", 
-                placeholder="E.g., 0 9 * * 1", 
-                key="new_task_cron"
+            import datetime
+            execution_time = st.time_input(
+                "Execution Time", 
+                value=datetime.time(9, 0),
+                key="new_task_execution_time"
             )
-            st.caption(
-                "Format: `min hour day_of_month month day_of_week`  \n"
-                "- `*/15 * * * *` (Every 15 minutes)  \n"
-                "- `0 * * * *` (Every hour)  \n"
-                "- `0 9 * * *` (Daily at 9:00 AM)  \n"
-                "- `0 9 * * 1` (Weekly on Mondays at 9:00 AM)"
-            )
+            cron_expr = f"{execution_time.minute} {execution_time.hour} * * *"
             
         if st.button("📅 Schedule Task", use_container_width=True, type="primary"):
             if not t_name.strip():
@@ -2149,31 +2139,26 @@ def render_scheduled_tasks():
             now = datetime.datetime.now()
             next_run_at = None
             
-            if rec_type == "Cron Schedule":
-                cron_clean = cron_expr.strip()
-                if not cron_clean:
-                    st.error("Please enter a valid Cron Expression.")
+            if rec_type == "Daily Time":
+                if not cron_expr:
+                    st.error("Please select a valid execution time.")
                     st.stop()
                 try:
-                    iter = croniter(cron_clean, now)
+                    iter = croniter(cron_expr, now)
                     next_run_at = iter.get_next(datetime.datetime)
                 except Exception as ex:
-                    st.error(f"Invalid Cron Expression: {ex}")
+                    st.error(f"Invalid schedule time: {ex}")
                     st.stop()
             else:
                 next_run_at = now + datetime.timedelta(seconds=interval_secs)
                 
-            # Create conversation thread if needed
-            conv_id = None
-            if thread_mode == "Create a new dedicated chat thread":
-                conv_id = db_action(create_conversation, user_id, title=t_name.strip())
-                if not conv_id:
-                    st.error("Failed to create a dedicated chat thread. Please try again.")
-                    st.stop()
-                # Create initial message in the conversation thread to initialize it
-                db_action(save_message, conv_id, "assistant", f"Welcome! This chat thread is dedicated to the scheduled task **{t_name.strip()}**.")
-            elif thread_mode == "Link to an existing chat thread":
-                conv_id = linked_conv_id
+            # Create conversation thread (default)
+            conv_id = db_action(create_conversation, user_id, title=t_name.strip())
+            if not conv_id:
+                st.error("Failed to create a dedicated chat thread. Please try again.")
+                st.stop()
+            # Create initial message in the conversation thread to initialize it
+            db_action(save_message, conv_id, "assistant", f"Welcome! This chat thread is dedicated to the scheduled task **{t_name.strip()}**.")
                 
             # Save the task
             db_action(
@@ -2182,7 +2167,7 @@ def render_scheduled_tasks():
                 conv_id,
                 t_name.strip(),
                 t_prompt.strip(),
-                cron_clean if rec_type == "Cron Schedule" else None,
+                cron_expr if rec_type == "Daily Time" else None,
                 interval_secs if rec_type == "Interval (Hours)" else None,
                 next_run_at
             )
