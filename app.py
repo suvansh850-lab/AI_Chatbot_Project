@@ -2513,41 +2513,23 @@ def render_webhooks_integration():
             st.session_state.selected_nav = "Chat"
             st.rerun()
             
-    st.caption("Setup and monitor Telegram and WhatsApp Webhooks to interact with your AI assistant on messaging platforms.")
+    st.caption("Setup and monitor Telegram Webhooks to interact with your AI assistant on messaging platforms.")
 
     telegram_token = get_secret("TELEGRAM_BOT_TOKEN", "")
-    whatsapp_token = get_secret("WHATSAPP_ACCESS_TOKEN", "")
-    whatsapp_phone_id = get_secret("WHATSAPP_PHONE_NUMBER_ID", "")
-    whatsapp_verify_token = get_secret("WHATSAPP_VERIFY_TOKEN", "")
 
-    # Status indicators in columns
-    c1, c2 = st.columns(2)
-    
-    with c1:
-        st.markdown("### 🤖 Telegram Bot")
-        if telegram_token and telegram_token != "your-telegram-bot-token":
-            st.success("🟢 Connected")
-            st.markdown(f"**Bot Token:** `{telegram_token[:6]}...{telegram_token[-6:]}`")
-        else:
-            st.warning("🟡 Not Configured")
-            st.info("To configure Telegram, add `TELEGRAM_BOT_TOKEN` in your secrets/environment variables.")
-
-    with c2:
-        st.markdown("### 💬 WhatsApp Business Cloud")
-        if (whatsapp_token and whatsapp_token != "your-whatsapp-access-token" and
-            whatsapp_phone_id and whatsapp_phone_id != "your-whatsapp-phone-number-id" and
-            whatsapp_verify_token and whatsapp_verify_token != "your-whatsapp-webhook-verify-token"):
-            st.success("🟢 Connected")
-            st.markdown(f"**Phone Number ID:** `{whatsapp_phone_id}`")
-            st.markdown(f"**Verify Token:** `{whatsapp_verify_token}`")
-        else:
-            st.warning("🟡 Not Configured")
-            st.info("To configure WhatsApp, add `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_VERIFY_TOKEN` in your secrets/environment variables.")
+    # Status indicators
+    st.markdown("### 🤖 Telegram Bot")
+    if telegram_token and telegram_token != "your-telegram-bot-token":
+        st.success("🟢 Connected")
+        st.markdown(f"**Bot Token:** `{telegram_token[:6]}...{telegram_token[-6:]}`")
+    else:
+        st.warning("🟡 Not Configured")
+        st.info("To configure Telegram, add `TELEGRAM_BOT_TOKEN` in your secrets/environment variables.")
 
     st.markdown("---")
     
-    tab_urls, tab_tg_guide, tab_wa_guide = st.tabs([
-        "🔌 Callback URLs", "🤖 Telegram Setup Guide", "💬 WhatsApp Setup Guide"
+    tab_urls, tab_tg_guide = st.tabs([
+        "🔌 Callback URLs", "🤖 Telegram Setup Guide"
     ])
 
     with tab_urls:
@@ -2562,13 +2544,11 @@ def render_webhooks_integration():
         st.markdown(
             "- **Telegram Callback URL:**\n"
             "  `http://127.0.0.1:8000/webhook/telegram` (POST)\n"
-            "- **WhatsApp Callback URL:**\n"
-            "  `http://127.0.0.1:8000/webhook/whatsapp` (GET / POST)\n"
         )
         
         st.markdown(
             "💡 **Note:** Replace `http://127.0.0.1:8000` with your public ngrok URL (e.g. `https://xxxx-xx-xx.ngrok-free.app`) "
-            "when registering webhooks on Meta / Telegram developer portals."
+            "when registering webhooks on the Telegram developer portal."
         )
 
     with tab_tg_guide:
@@ -2582,23 +2562,6 @@ def render_webhooks_integration():
                curl -X POST "https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/setWebhook?url=<YOUR_PUBLIC_TUNNEL_URL>/webhook/telegram"
                ```
             4. Once registered successfully, any message sent to your bot will be answered by this assistant.
-            """
-        )
-
-    with tab_wa_guide:
-        st.markdown("### How to Setup WhatsApp Cloud Webhook")
-        st.markdown(
-            """
-            1. Go to **[Meta Developers Portal](https://developers.facebook.com/)** and create a **Business App**.
-            2. Add **WhatsApp** product to your app.
-            3. Under WhatsApp > **API Setup**, find your **Phone Number ID** and **Temporary Access Token** (or create a permanent system user token).
-            4. Add these values along with a custom **Verify Token** to your `.streamlit/secrets.toml`.
-            5. In the Meta App Dashboard, go to **WhatsApp > Configuration**:
-               - Click **Edit** under Webhooks.
-               - Enter **Callback URL**: `<YOUR_PUBLIC_TUNNEL_URL>/webhook/whatsapp`
-               - Enter **Verify Token**: (the verify token value you set in secrets)
-               - Click **Verify and save**.
-            6. Subscribe to **messages** webhook fields under WhatsApp Webhook Fields table.
             """
         )
 

@@ -19,7 +19,7 @@ from .schemas import ChatRequest
 _scheduler_thread = None
 _stop_event = threading.Event()
 
-# (Telegram and WhatsApp notifications removed from scheduled tasks module)
+# (Telegram notifications removed from scheduled tasks module)
 
 def execute_scheduled_task(task: dict):
     task_id = task["id"]
@@ -93,7 +93,7 @@ def execute_scheduled_task(task: dict):
     if conversation_id:
         save_message(conversation_id, "assistant", answer)
         
-    # (Telegram and WhatsApp notification forwarding removed)
+    # (Telegram notification forwarding removed)
 
 def scheduler_loop():
     print("Background Task Scheduler thread started successfully.")
