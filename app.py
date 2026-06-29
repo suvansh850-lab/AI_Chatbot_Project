@@ -3395,7 +3395,7 @@ def render_sidebar():
                     total_available = len([c for c in st.session_state.conversations if c.get("messages")])
                 
                 if total_available > st.session_state.chats_limit and not search_query:
-                    if st.button("Load More ➕", key="load_more_chats", use_container_width=True):
+                    if st.button("Load More +", key="load_more_chats", use_container_width=True):
                         st.session_state.chats_limit += 30
                         st.rerun()
         else:
