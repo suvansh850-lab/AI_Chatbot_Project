@@ -3446,7 +3446,7 @@ def render_sidebar():
                 st.rerun()
 
         # --- Google integration status and controls ---
-        st.markdown('<div class="side-section-title">Google Integration</div>', unsafe_allow_html=True)
+        st.markdown('<div class="side-section-title">Google Services</div>', unsafe_allow_html=True)
         
         # Load Google Credentials (cached in session state)
         google_creds = st.session_state.get("google_credentials")
@@ -3503,7 +3503,7 @@ def render_sidebar():
             st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #da7756; background:#da7756; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#c56241\'" onmouseout="this.style.background=\'#da7756\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
 
         # --- GitHub integration status and controls ---
-        st.markdown('<div class="side-section-title">GitHub Integration</div>', unsafe_allow_html=True)
+        st.markdown('<div class="side-section-title">GitHub </div>', unsafe_allow_html=True)
         if github_linked:
             st.markdown(
                 """
