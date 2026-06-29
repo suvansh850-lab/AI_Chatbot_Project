@@ -3549,7 +3549,7 @@ def render_sidebar():
             unsafe_allow_html=True
         )
 
-        st.markdown('<div class="side-section-title">Session</div>', unsafe_allow_html=True)
+        st.markdown('<div class="side-section-title">User</div>', unsafe_allow_html=True)
         current_user = st.session_state.get("username", "Guest")
         st.markdown(
             f"""
