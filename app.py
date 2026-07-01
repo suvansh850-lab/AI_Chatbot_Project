@@ -125,6 +125,7 @@ GOOGLE_REDIRECT_URI = get_secret("GOOGLE_REDIRECT_URI", "https://aichatbotprojec
 
 GITHUB_CLIENT_ID = get_secret("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = get_secret("GITHUB_CLIENT_SECRET", "")
+GITHUB_REDIRECT_URI = get_secret("GITHUB_REDIRECT_URI", GOOGLE_REDIRECT_URI)
 
 import hashlib
 import time
@@ -965,7 +966,7 @@ if st.session_state.authenticated:
                         "code": auth_code,
                         "client_id": GITHUB_CLIENT_ID,
                         "client_secret": GITHUB_CLIENT_SECRET,
-                        "redirect_uri": GOOGLE_REDIRECT_URI,
+                        "redirect_uri": GITHUB_REDIRECT_URI,
                     }
                     token_headers = {"Accept": "application/json"}
                     token_response = requests.post(token_url, data=token_data, headers=token_headers, timeout=15)
@@ -3528,7 +3529,7 @@ def render_sidebar():
                 github_auth_url = (
                     f"https://github.com/login/oauth/authorize?"
                     f"client_id={GITHUB_CLIENT_ID}&"
-                    f"redirect_uri={urllib.parse.quote(GOOGLE_REDIRECT_URI)}&"
+                    f"redirect_uri={urllib.parse.quote(GITHUB_REDIRECT_URI)}&"
                     f"scope={urllib.parse.quote(github_oauth_scope)}&"
                     f"state={urllib.parse.quote(signed_state)}"
                 )
