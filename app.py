@@ -3531,7 +3531,8 @@ def render_sidebar():
                     f"client_id={GITHUB_CLIENT_ID}&"
                     f"redirect_uri={urllib.parse.quote(GITHUB_REDIRECT_URI)}&"
                     f"scope={urllib.parse.quote(github_oauth_scope)}&"
-                    f"state={urllib.parse.quote(signed_state)}"
+                    f"state={urllib.parse.quote(signed_state)}&"
+                    f"prompt=select_account"
                 )
                 st.markdown(f'<a href="{github_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #24292e; background:#24292e; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#444d56\'" onmouseout="this.style.background=\'#24292e\'">🔗 Connect GitHub</button></a>', unsafe_allow_html=True)
             else:
