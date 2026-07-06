@@ -291,7 +291,7 @@ st.markdown('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs
 st.markdown("""
 <style>
 .cb-header {
-    background: #F0F6FA;
+    background: #FAF5EF;
     border-radius: 12px;
     padding: 20px 28px;
     margin-bottom: 24px;
@@ -299,7 +299,7 @@ st.markdown("""
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    border: 1px solid #E2E8F0;
+    border: 1px solid #EBE3DB;
     position: relative;
     overflow: hidden;
 }
@@ -311,7 +311,7 @@ st.markdown("""
     width: 220px;
     height: 220px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(211, 107, 0, 0.06) 0%, transparent 70%);
     pointer-events: none;
 }
 .cb-header-left {
@@ -320,13 +320,13 @@ st.markdown("""
     gap: 18px;
 }
 .cb-icon-container {
-    background: #FAFCFE;
+    background: #FFFDFB;
     border-radius: 12px;
     padding: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #EBE3DB;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 .cb-header h1 {
@@ -334,10 +334,10 @@ st.markdown("""
     font-size: 1.8rem;
     font-weight: 750;
     letter-spacing: -0.5px;
-    color: #0F172A;
+    color: #25180F;
 }
 .cb-header p {
-    color: #475569;
+    color: #75675A;
     margin: 4px 0 0 0;
     font-size: 0.92rem;
     display: flex;
@@ -349,32 +349,32 @@ st.markdown("""
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #0ea5e9;
-    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+    background: #D36B00;
+    box-shadow: 0 0 0 0 rgba(211, 107, 0, 0.4);
     animation: pulse-dot 2s infinite;
     flex-shrink: 0;
 }
 @keyframes pulse-dot {
     0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+        box-shadow: 0 0 0 0 rgba(211, 107, 0, 0.4);
     }
     70% {
         transform: scale(1);
-        box-shadow: 0 0 0 6px rgba(14, 165, 233, 0);
+        box-shadow: 0 0 0 6px rgba(211, 107, 0, 0);
     }
     100% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+        box-shadow: 0 0 0 0 rgba(211, 107, 0, 0);
     }
 }
 .badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(14, 165, 233, 0.08);
-    border: 1px solid rgba(14, 165, 233, 0.2);
-    color: #0ea5e9;
+    background: rgba(211, 107, 0, 0.08);
+    border: 1px solid rgba(211, 107, 0, 0.2);
+    color: #D36B00;
     border-radius: 999px;
     padding: 5px 12px;
     font-size: 0.8rem;
@@ -393,8 +393,8 @@ iframe[title="audio_recorder_streamlit.audio_recorder"] {
     right: calc(5rem + 65px) !important;
     width: 34px !important;
     height: 34px !important;
-    background: #F8FAFC !important;
-    border: 1px solid #E2E8F0 !important;
+    background: #FFFDFB !important;
+    border: 1px solid #F3E8DB !important;
     border-radius: 50% !important;
     padding: 0px !important;
     z-index: 99999 !important;
@@ -409,8 +409,8 @@ iframe[title="audio_recorder_streamlit.audio_recorder"] {
     }
 }
 iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
-    border-color: #0ea5e9 !important;
-    background: #F0F6FA !important;
+    border-color: #D36B00 !important;
+    background: #FAF5EF !important;
     transform: scale(1.05);
     transition: all 0.15s ease;
 }
@@ -421,7 +421,7 @@ iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
     right: calc(5rem + 107px) !important;
     font-size: 0.82rem !important;
     font-weight: 600 !important;
-    color: #0ea5e9 !important;
+    color: #D36B00 !important;
     z-index: 99999 !important;
     pointer-events: none !important;
 }
@@ -434,8 +434,8 @@ iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
 
 /* Sidebar styling */
 section[data-testid="stSidebar"] {
-    background: #F0F6FA !important;
-    border-right: 1px solid #E2E8F0 !important;
+    background: #FAF5EF !important;
+    border-right: 1px solid #F3E8DB !important;
 }
 section[data-testid="stSidebar"] > div {
     padding-top: 1.2rem;
@@ -446,7 +446,7 @@ section[data-testid="stSidebar"] > div {
     gap: 12px;
     padding: 8px 4px 18px 4px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid #EBE3DB;
 }
 .side-logo {
     width: 42px;
@@ -455,23 +455,23 @@ section[data-testid="stSidebar"] > div {
     align-items: center;
     justify-content: center;
     border-radius: 10px;
-    background: #FAFCFE;
-    border: 1px solid #E2E8F0;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 .side-brand h3 {
-    color: #0F172A;
+    color: #25180F;
     font-size: 1rem;
     line-height: 1.15;
     margin: 0;
 }
 .side-brand p {
-    color: #475569;
+    color: #75675A;
     font-size: 0.78rem;
     margin: 3px 0 0 0;
 }
 .side-section-title {
-    color: #475569;
+    color: #75675A;
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -479,33 +479,33 @@ section[data-testid="stSidebar"] > div {
     margin: 14px 0 8px 2px;
 }
 .side-status {
-    color: #0F172A;
-    background: #FAFCFE;
-    border: 1px solid #E2E8F0;
+    color: #25180F;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
     border-radius: 8px;
     padding: 12px;
     margin: 12px 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 .side-status strong {
-    color: #0F172A;
+    color: #25180F;
 }
 .side-status span {
-    color: #475569;
+    color: #75675A;
     font-size: 0.82rem;
 }
 section[data-testid="stSidebar"] button {
     border-radius: 8px !important;
-    border: 1px solid #E2E8F0 !important;
-    background: #FAFCFE !important;
-    color: #0F172A !important;
+    border: 1px solid #F3E8DB !important;
+    background: #FFFDFB !important;
+    color: #25180F !important;
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
 }
 section[data-testid="stSidebar"] button:hover {
-    background: #E2E8F0 !important;
-    border-color: #0ea5e9 !important;
-    color: #0ea5e9 !important;
+    background: #F3E8DB !important;
+    border-color: #D36B00 !important;
+    color: #D36B00 !important;
 }
 
 /* Popover / Model selection */
@@ -516,29 +516,29 @@ section[data-testid="stSidebar"] button:hover {
 }
 div[data-testid="stPopover"] > button {
     border-radius: 999px !important;
-    background: #FAFCFE !important;
-    border: 1px solid #E2E8F0 !important;
-    color: #0ea5e9 !important;
+    background: #FFFDFB !important;
+    border: 1px solid #F3E8DB !important;
+    color: #D36B00 !important;
     font-weight: 700 !important;
     padding: 8px 18px !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 div[data-testid="stPopover"] > button:hover {
-    background: #E2E8F0 !important;
-    border-color: #0ea5e9 !important;
+    background: #F3E8DB !important;
+    border-color: #D36B00 !important;
 }
 .model-menu-title {
-    color: #0F172A;
+    color: #25180F;
     font-size: 0.92rem;
     font-weight: 700;
     margin: 2px 0 8px 0;
 }
 .model-menu-help {
-    color: #475569;
+    color: #75675A;
     font-size: 0.82rem;
     margin: 10px 0 0 0;
     padding-top: 10px;
-    border-top: 1px solid #E2E8F0;
+    border-top: 1px solid #EBE3DB;
 }
 
 /* Login/Signup styling */
@@ -558,8 +558,8 @@ div[data-testid="stPopover"] > button:hover {
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: #FAFCFE;
-    border: 1px solid #E2E8F0;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 .login-copy h2 {
@@ -567,10 +567,10 @@ div[data-testid="stPopover"] > button:hover {
     font-weight: 750;
     margin: 0;
     text-align: center;
-    color: #0F172A;
+    color: #25180F;
 }
 .login-copy p {
-    color: #475569;
+    color: #75675A;
     font-size: 0.9rem;
     margin: 4px 0 0 0;
     text-align: center;
@@ -579,17 +579,17 @@ div[data-testid="stPopover"] > button:hover {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #0ea5e9;
-    background: rgba(14, 165, 233, 0.08);
-    border: 1px solid rgba(14, 165, 233, 0.2);
+    color: #D36B00;
+    background: rgba(211, 107, 0, 0.08);
+    border: 1px solid rgba(211, 107, 0, 0.2);
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 0.82rem;
     margin: 0 auto 24px auto;
 }
 div[data-testid="stForm"] {
-    background: #FAFCFE;
-    border: 1px solid #E2E8F0;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
     min-height: 480px;
@@ -599,46 +599,46 @@ div[data-testid="stForm"] {
     justify-content: center;
 }
 div[data-testid="stForm"] label {
-    color: #0F172A !important;
+    color: #25180F !important;
     font-size: 0.88rem !important;
     font-weight: 650 !important;
 }
 div[data-testid="stForm"] input {
     border-radius: 8px;
-    background: #FAFCFE;
-    border: 1px solid #E2E8F0;
-    color: #0F172A !important;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
+    color: #25180F !important;
 }
 div[data-testid="stForm"] button {
-    background: #0ea5e9;
-    border: 1px solid #0ea5e9;
+    background: #D36B00;
+    border: 1px solid #D36B00;
     border-radius: 8px;
     color: #ffffff;
     font-weight: 700;
     transition: all 0.2s ease;
 }
 div[data-testid="stForm"] button:hover {
-    background: #0284c7;
-    border-color: #0284c7;
+    background: #B25A00;
+    border-color: #B25A00;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
+    box-shadow: 0 2px 8px rgba(211, 107, 0, 0.25);
 }
 
 /* AI Insights card */
 .ai-insights-card {
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
-    border-left: 4px solid #0ea5e9;
+    background: #FFFDFB;
+    border: 1px solid #EBE3DB;
+    border-left: 4px solid #D36B00;
     border-radius: 8px;
     padding: 24px;
     margin: 20px 0;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.01);
-    color: #0F172A;
+    color: #25180F;
     font-size: 1.02rem;
     line-height: 1.65;
 }
 .ai-insights-title {
-    color: #0ea5e9;
+    color: #D36B00;
     font-size: 1.35rem;
     font-weight: 700;
     margin-top: 0;
@@ -650,16 +650,16 @@ div[data-testid="stForm"] button:hover {
 
 /* Style for User messages (prompt section) background */
 div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    background-color: #F0F6FA !important;
-    border: 1px solid #E2E8F0 !important;
+    background-color: #FAF5EF !important;
+    border: 1px solid #F3E8DB !important;
     border-radius: 12px !important;
     padding-bottom: 10px !important;
 }
 
 /* Style for Assistant messages (answer section) background */
 div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-    background-color: #F8FAFC !important;
-    border: 1px solid #E2E8F0 !important;
+    background-color: #FFFDFB !important;
+    border: 1px solid #F3E8DB !important;
     border-radius: 12px !important;
     padding-bottom: 10px !important;
 }
@@ -712,7 +712,7 @@ def render_login_page():
             st.markdown("""
             <div class="login-brand">
                 <div class="login-mark">
-                    <i class="fa-solid fa-robot" style="font-size: 1.75rem; color: #0ea5e9;"></i>
+                    <i class="fa-solid fa-robot" style="font-size: 1.75rem; color: #D36B00;"></i>
                 </div>
                 <div class="login-copy">
                     <h2>Morepen AI Assistant</h2>
@@ -800,7 +800,7 @@ def render_login_page():
             st.markdown("""
             <div class="login-brand">
                 <div class="login-mark">
-                    <i class="fa-solid fa-robot" style="font-size: 1.75rem; color: #0ea5e9;"></i>
+                    <i class="fa-solid fa-robot" style="font-size: 1.75rem; color: #D36B00;"></i>
                 </div>
                 <div class="login-copy">
                     <h2>Morepen AI Assistant</h2>
@@ -1055,7 +1055,7 @@ st.markdown("""
 <div class="cb-header">
     <div class="cb-header-left">
         <div class="cb-icon-container">
-            <i class="fa-solid fa-robot" style="font-size: 2.2rem; color: #0ea5e9;"></i>
+            <i class="fa-solid fa-robot" style="font-size: 2.2rem; color: #D36B00;"></i>
         </div>
         <div>
             <h1>Morepen AI Assistant</h1>
@@ -1783,11 +1783,11 @@ def render_data_analysis():
                 top_customer_sales = float(cust_totals.max())
 
 
-    st.markdown('<h3 style="margin-top:0px; color:#0ea5e9;">Business Performance & KPI Summary</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 style="margin-top:0px; color:#D36B00;">Business Performance & KPI Summary</h3>', unsafe_allow_html=True)
     st.caption("Auto-calculated critical metrics and plain-English intelligence from your dataset.")
     
     # Display styled KPI summary cards dynamically
-    st.markdown('<div style="font-weight:700; color:#0ea5e9; margin-bottom:16px; font-size:1.1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">📊 Key Performance Indicators (KPIs)</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-weight:700; color:#D36B00; margin-bottom:16px; font-size:1.1rem; border-bottom: 1px solid #EBE3DB; padding-bottom: 6px;">📊 Key Performance Indicators (KPIs)</div>', unsafe_allow_html=True)
     
     metrics_to_show = []
     metrics_to_show.append(("Total Orders (Transactions)", f"{transactions:,}", "Total number of transaction records"))
@@ -2264,7 +2264,7 @@ def render_document_library():
             with col_icon:
                 ftype = item["file_type"]
                 if ftype == "dataset":
-                    st.markdown('<div style="text-align: center; margin-top: 10px;"><i class="fa-solid fa-table" style="color: #0ea5e9; font-size: 1.6rem;"></i></div>', unsafe_allow_html=True)
+                    st.markdown('<div style="text-align: center; margin-top: 10px;"><i class="fa-solid fa-table" style="color: #D36B00; font-size: 1.6rem;"></i></div>', unsafe_allow_html=True)
                 elif ftype == "image":
                     st.markdown('<div style="text-align: center; margin-top: 10px;"><i class="fa-solid fa-image" style="color: #ec4899; font-size: 1.6rem; filter: drop-shadow(0 2px 4px rgba(236, 72, 153, 0.3));"></i></div>', unsafe_allow_html=True)
                 else:
@@ -2306,9 +2306,9 @@ def render_document_library():
                 
                 st.markdown(
                     f'<div style="margin-top: 2px;">'
-                    f'<span style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">{filename}</span>'
+                    f'<span style="font-weight: 700; color: #25180F; font-size: 1.05rem;">{filename}</span>'
                     f'{size_info}<br>'
-                    f'<span style="color: #475569; font-size: 0.82rem;">Uploaded: {date_str} &nbsp;|&nbsp; Source: <strong>{source_label}</strong></span>'
+                    f'<span style="color: #75675A; font-size: 0.82rem;">Uploaded: {date_str} &nbsp;|&nbsp; Source: <strong>{source_label}</strong></span>'
                     f'</div>', 
                     unsafe_allow_html=True
                 )
@@ -2404,7 +2404,7 @@ def render_document_library():
                 break
         
         if item:
-            st.markdown(f'<h3 style="color: #0ea5e9; margin-bottom: 12px;"><i class="fa-solid fa-magnifying-glass"></i> File Preview: {item["filename"]}</h3>', unsafe_allow_html=True)
+            st.markdown(f'<h3 style="color: #D36B00; margin-bottom: 12px;"><i class="fa-solid fa-magnifying-glass"></i> File Preview: {item["filename"]}</h3>', unsafe_allow_html=True)
             
             with st.container(border=True):
                 ftype = item["file_type"]
@@ -2734,11 +2734,11 @@ def render_github_explorer():
         
         # Styled breadcrumbs
         bc_html = '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.95rem;">'
-        bc_html += '<span style="color: #475569;">Path:</span>'
-        bc_html += '<span style="background: #F0F6FA; padding: 4px 8px; border-radius: 4px; color: #0F172A; font-weight: bold;">[root]</span>'
+        bc_html += '<span style="color: #75675A;">Path:</span>'
+        bc_html += '<span style="background: #FAF5EF; padding: 4px 8px; border-radius: 4px; color: #25180F; font-weight: bold;">[root]</span>'
         for p in parts:
             bc_html += '<span style="color: #94a3b8;">/</span>'
-            bc_html += f'<span style="background: #F0F6FA; padding: 4px 8px; border-radius: 4px; color: #0F172A;">{p}</span>'
+            bc_html += f'<span style="background: #FAF5EF; padding: 4px 8px; border-radius: 4px; color: #25180F;">{p}</span>'
         bc_html += '</div>'
         st.markdown(bc_html, unsafe_allow_html=True)
         
@@ -3327,7 +3327,7 @@ def render_sidebar():
         st.markdown("""
         <div class="side-brand">
             <div class="side-logo">
-                <i class="fa-solid fa-robot" style="font-size: 1.45rem; color: #0ea5e9;"></i>
+                <i class="fa-solid fa-robot" style="font-size: 1.45rem; color: #D36B00;"></i>
             </div>
             <div>
                 <h3>Morepen AI</h3>
@@ -3501,7 +3501,7 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #0ea5e9; background:#0ea5e9; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#0284c7\'" onmouseout="this.style.background=\'#0ea5e9\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #D36B00; background:#D36B00; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#B25A00\'" onmouseout="this.style.background=\'#D36B00\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
 
         # --- GitHub integration status and controls ---
         st.markdown('<div class="side-section-title">GitHub </div>', unsafe_allow_html=True)
@@ -3556,10 +3556,10 @@ def render_sidebar():
         st.markdown(
             f"""
             <div class="side-status" style="margin-top:0; margin-bottom:10px; padding:10px 12px; display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-circle-user" style="font-size: 1.4rem; color: #0ea5e9;"></i>
+                <i class="fa-solid fa-circle-user" style="font-size: 1.4rem; color: #D36B00;"></i>
                 <div>
-                    <span style="font-size:0.75rem; color:#475569; text-transform:uppercase; font-weight:800; letter-spacing:0.05em; display:block; line-height:1;">Signed in as</span>
-                    <strong style="color:#0F172A; font-size:0.88rem; display:block; margin-top:3px; word-break:break-all;">{current_user}</strong>
+                    <span style="font-size:0.75rem; color:#75675A; text-transform:uppercase; font-weight:800; letter-spacing:0.05em; display:block; line-height:1;">Signed in as</span>
+                    <strong style="color:#25180F; font-size:0.88rem; display:block; margin-top:3px; word-break:break-all;">{current_user}</strong>
                 </div>
             </div>
             """,
@@ -3737,7 +3737,7 @@ def generate_pdf_transcript(messages):
         parent=styles['Heading2'],
         fontSize=11,
         leading=14,
-        textColor=colors.HexColor('#06b6d4'),
+        textColor=colors.HexColor('#B25A00'),
         spaceBefore=8,
         spaceAfter=2
     )
@@ -3747,7 +3747,7 @@ def generate_pdf_transcript(messages):
         parent=styles['Heading2'],
         fontSize=11,
         leading=14,
-        textColor=colors.HexColor('#0ea5e9'),
+        textColor=colors.HexColor('#D36B00'),
         spaceBefore=8,
         spaceAfter=2
     )
@@ -3840,7 +3840,7 @@ with tc3:
 
         # --- Google Docs Export divider ---
         st.markdown(
-            "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #E2E8F0;'>"
+            "<hr style='margin:12px 0 10px 0; border:none; border-top:1px solid #EBE3DB;'>"
             "<div style='font-size:0.9rem; font-weight:700; margin-bottom:8px;'>Google Docs Export</div>",
             unsafe_allow_html=True
         )
@@ -3993,9 +3993,9 @@ def render_copy_button(text, key):
                 margin-top: 0px;
             }}
             .copy-btn:hover {{
-                background-color: #F0F6FA;
-                border-color: #0ea5e9;
-                color: #0ea5e9;
+                background-color: #FAF5EF;
+                border-color: #D36B00;
+                color: #D36B00;
             }}
             .copy-btn:active {{
                 transform: scale(0.95);
@@ -4134,7 +4134,7 @@ with chat_box:
                 file_kind = get_file_type(filename)
                 if file_kind == "dataset":
                     icon_class = "fa-solid fa-table"
-                    icon_color = "#0ea5e9" # Light Blue
+                    icon_color = "#D36B00" # Light Blue
                 elif file_kind == "image":
                     icon_class = "fa-solid fa-image"
                     icon_color = "#ec4899" # Pink
@@ -4143,9 +4143,9 @@ with chat_box:
                     icon_color = "#10b981" # Green
                 
                 st.markdown(
-                    f'<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; width: fit-content; margin: 4px 0 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">'
+                    f'<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background-color: #FFFDFB; border: 1px solid #EBE3DB; border-radius: 8px; width: fit-content; margin: 4px 0 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">'
                     f'<i class="{icon_class}" style="color: {icon_color}; font-size: 1.5rem;"></i>'
-                    f'<span style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">{filename}</span>'
+                    f'<span style="font-weight: 700; color: #25180F; font-size: 1.05rem;">{filename}</span>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -4248,7 +4248,7 @@ typed = st.chat_input("Ask me anything...", accept_file="multiple", file_type=["
 
 st.markdown('<div class="voice-search-label">Voice Search</div>', unsafe_allow_html=True)
 # Voice recorder — styled as a circular mic button floating next to chat input
-audio_bytes = audio_recorder(text="", recording_color="#ef4444", neutral_color="#0ea5e9", icon_name="microphone", icon_size="1x", key="voice_mic")
+audio_bytes = audio_recorder(text="", recording_color="#ef4444", neutral_color="#D36B00", icon_name="microphone", icon_size="1x", key="voice_mic")
 
 if audio_bytes and st.session_state.last_audio_bytes != audio_bytes:
     st.session_state.last_audio_bytes = audio_bytes
