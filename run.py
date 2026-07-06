@@ -25,7 +25,7 @@ time.sleep(1)
 print(f"Launching Streamlit frontend on 0.0.0.0:{port_str} in foreground...")
 try:
     subprocess.run([
-        "streamlit", "run", "app.py",
+        sys.executable, "-m", "streamlit", "run", "app.py",
         "--server.port", port_str,
         "--server.address", "0.0.0.0"
     ], check=True)
