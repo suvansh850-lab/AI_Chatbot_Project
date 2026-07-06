@@ -290,304 +290,111 @@ st.markdown('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs
 
 st.markdown("""
 <style>
-/* Load Google Font Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Apply global font and background */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-    font-family: 'Inter', sans-serif !important;
-}
-
-/* Hide default Streamlit header bar completely */
-header[data-testid="stHeader"] {
-    display: none !important;
-}
-
-/* Sidebar styling */
-section[data-testid="stSidebar"] {
-    background-color: #f8f9fa !important;
-    border-right: 1px solid #e3e3e3 !important;
-}
-
-section[data-testid="stSidebar"] > div {
-    padding-top: 1.5rem !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-}
-
-/* Hide brand logo */
-.side-brand {
-    display: none !important;
-}
-
-/* "+ New chat" Button styling */
-.new-chat-container {
+.cb-header {
+    background: #F0F6FA;
+    border-radius: 12px;
+    padding: 20px 28px;
     margin-bottom: 24px;
-}
-.new-chat-container button {
-    background-color: #1a73e8 !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 24px !important;
-    padding: 10px 24px !important;
-    font-weight: 600 !important;
-    font-size: 0.95rem !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    transition: all 0.2s ease !important;
-    width: 100% !important;
-}
-.new-chat-container button:hover {
-    background-color: #1557b0 !important;
-    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.2) !important;
-}
-
-/* Section titles (Today, Yesterday, Recents, Features) */
-.side-section-title {
-    color: #5f6368 !important;
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    margin: 18px 0 8px 4px !important;
-}
-
-.recents-group-title {
-    color: #70757a !important;
-    font-size: 0.72rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    margin: 12px 0 6px 8px !important;
-}
-
-/* Sidebar lists container and button items */
-.sidebar-recents, .sidebar-features {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.sidebar-recents button, .sidebar-features button {
-    background-color: transparent !important;
-    border: none !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    color: #3c4043 !important;
-    font-size: 0.88rem !important;
-    font-weight: 500 !important;
-    padding: 8px 16px !important;
-    border-radius: 12px !important;
-    width: 100% !important;
-    transition: background-color 0.2s ease, color 0.2s ease !important;
-}
-
-.sidebar-recents button:hover, .sidebar-features button:hover {
-    background-color: #e8eaed !important;
-    color: #202124 !important;
-}
-
-/* Active chat state highlighting */
-.active-chat button {
-    background-color: #e8eaed !important;
-    color: #1a73e8 !important;
-    font-weight: 600 !important;
-}
-
-/* User profile section at bottom of sidebar */
-.user-profile-container {
     display: flex;
     align-items: center;
-    padding-top: 16px;
-    margin-top: 20px;
-    border-top: 1px solid #e3e3e3;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid #E2E8F0;
+    position: relative;
+    overflow: hidden;
 }
-.user-avatar {
-    width: 36px;
-    height: 36px;
+.cb-header::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
-    background-color: #d2e3fc;
-    color: #1967d2;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+.cb-header-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.cb-icon-container {
+    background: #FAFCFE;
+    border-radius: 12px;
+    padding: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 0.9rem;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
-.user-name {
-    font-size: 0.9rem;
+.cb-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+    color: #0F172A;
+}
+.cb-header p {
+    color: #475569;
+    margin: 4px 0 0 0;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+.live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #0ea5e9;
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+    animation: pulse-dot 2s infinite;
+    flex-shrink: 0;
+}
+@keyframes pulse-dot {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(14, 165, 233, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+    }
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(14, 165, 233, 0.08);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    color: #0ea5e9;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
     font-weight: 600;
-    color: #3c4043;
+    margin: 4px 4px 8px 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-/* Logout Button */
-button[key^="logout_btn"] {
-    background-color: transparent !important;
-    border: none !important;
-    font-size: 1.1rem !important;
-    color: #5f6368 !important;
-    padding: 4px !important;
-}
-button[key^="logout_btn"]:hover {
-    color: #d93025 !important;
-    background-color: #fce8e6 !important;
-    border-radius: 50% !important;
-}
-
-/* Main Chat Container Styles */
-.chat-header-title-text {
-    font-size: 1.35rem !important;
-    font-weight: 600 !important;
-    color: #202124 !important;
-    margin-bottom: 4px !important;
-}
-
-.header-divider {
-    border: 0 !important;
-    border-top: 1px solid #e3e3e3 !important;
-    margin-top: 8px !important;
-    margin-bottom: 20px !important;
-}
-
-/* Chat Messages */
-div[data-testid="stChatMessage"] {
-    background-color: transparent !important;
-    border: none !important;
-    padding: 12px 0 !important;
-    display: flex !important;
-    width: 100% !important;
-}
-
-/* User Message bubble right alignment */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-    justify-content: flex-end !important;
-    flex-direction: row-reverse !important;
-}
-
-/* Hide user avatar */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) div[data-testid="stChatMessageAvatar"] {
-    display: none !important;
-}
-
-/* User message content box styling (Google Blue bubble) */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) div[data-testid="stChatMessageContent"] {
-    background-color: #1a73e8 !important;
-    color: #ffffff !important;
-    border-radius: 18px !important;
-    padding: 12px 18px !important;
-    font-size: 0.95rem !important;
-    line-height: 1.5 !important;
-    max-width: 65% !important;
-    width: fit-content !important;
-    border: none !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-}
-
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) div[data-testid="stChatMessageContent"] p {
-    color: #ffffff !important;
-}
-
-/* Assistant Message bubble left alignment */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
-    justify-content: flex-start !important;
-    gap: 12px !important;
-}
-
-/* Assistant avatar circle */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageAvatar"] {
-    background-color: #1a73e8 !important;
-    border-radius: 50% !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-    overflow: hidden !important;
-}
-
-/* Hide default assistant icon/image */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageAvatar"] svg,
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageAvatar"] img,
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageAvatar"] div {
-    display: none !important;
-}
-
-/* Custom sparkles inside assistant avatar */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageAvatar"]::before {
-    content: "\\f72b"; /* FontAwesome wand-magic-sparkles */
-    font-family: "Font Awesome 6 Free" !important;
-    font-weight: 900 !important;
-    color: #ffffff !important;
-    font-size: 0.95rem !important;
-}
-
-/* Assistant message content box styling (White bubble, thin border) */
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageContent"] {
-    background-color: #ffffff !important;
-    color: #202124 !important;
-    border: 1px solid #e3e3e3 !important;
-    border-radius: 18px !important;
-    padding: 12px 18px !important;
-    font-size: 0.95rem !important;
-    line-height: 1.5 !important;
-    max-width: 70% !important;
-    width: fit-content !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
-}
-
-div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) div[data-testid="stChatMessageContent"] p {
-    color: #202124 !important;
-}
-
-/* Chat Input custom styles */
+/* Mic button inside chat input */
 div[data-testid="stChatInput"] {
-    border: 1px solid #e3e3e3 !important;
-    border-radius: 28px !important;
-    background-color: #ffffff !important;
-    padding: 4px 16px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+    position: relative !important;
 }
-div[data-testid="stChatInput"]:focus-within {
-    border-color: #1a73e8 !important;
-    background-color: #ffffff !important;
-    box-shadow: 0 1px 6px rgba(32,33,36,0.1) !important;
-}
-div[data-testid="stChatInput"] textarea {
-    background-color: transparent !important;
-    color: #202124 !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.95rem !important;
-    line-height: 1.5 !important;
-    border: none !important;
-    padding-top: 8px !important;
-}
-div[data-testid="stChatInput"] button {
-    background-color: #1a73e8 !important;
-    color: #ffffff !important;
-    border-radius: 50% !important;
-    width: 32px !important;
-    height: 32px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: none !important;
-    transition: background-color 0.2s !important;
-}
-div[data-testid="stChatInput"] button:hover {
-    background-color: #1557b0 !important;
-}
-
-/* Voice Recorder mic button styling */
 iframe[title="audio_recorder_streamlit.audio_recorder"] {
     position: fixed !important;
     bottom: 6px !important;
     right: calc(5rem + 65px) !important;
     width: 34px !important;
     height: 34px !important;
-    background: #f0f4f9 !important;
-    border: 1px solid #e3e3e3 !important;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 50% !important;
     padding: 0px !important;
     z-index: 99999 !important;
@@ -595,9 +402,15 @@ iframe[title="audio_recorder_streamlit.audio_recorder"] {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
     overflow: hidden !important;
 }
+@media (max-width: 768px) {
+    iframe[title="audio_recorder_streamlit.audio_recorder"] {
+        right: calc(1rem + 65px) !important;
+        bottom: 6px !important;
+    }
+}
 iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
-    border-color: #1a73e8 !important;
-    background: #e8eaed !important;
+    border-color: #0ea5e9 !important;
+    background: #F0F6FA !important;
     transform: scale(1.05);
     transition: all 0.15s ease;
 }
@@ -608,39 +421,124 @@ iframe[title="audio_recorder_streamlit.audio_recorder"]:hover {
     right: calc(5rem + 107px) !important;
     font-size: 0.82rem !important;
     font-weight: 600 !important;
-    color: #1a73e8 !important;
+    color: #0ea5e9 !important;
     z-index: 99999 !important;
     pointer-events: none !important;
 }
+@media (max-width: 768px) {
+    .voice-search-label {
+        right: calc(1rem + 107px) !important;
+        bottom: 14px !important;
+    }
+}
 
-/* Model selector popover styled */
-div[data-testid="stPopover"] > button {
-    border-radius: 20px !important;
-    background: #ffffff !important;
-    border: 1px solid #e3e3e3 !important;
-    color: #1a73e8 !important;
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background: #F0F6FA !important;
+    border-right: 1px solid #E2E8F0 !important;
+}
+section[data-testid="stSidebar"] > div {
+    padding-top: 1.2rem;
+}
+.side-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 4px 18px 4px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #E2E8F0;
+}
+.side-logo {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #FAFCFE;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+.side-brand h3 {
+    color: #0F172A;
+    font-size: 1rem;
+    line-height: 1.15;
+    margin: 0;
+}
+.side-brand p {
+    color: #475569;
+    font-size: 0.78rem;
+    margin: 3px 0 0 0;
+}
+.side-section-title {
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 14px 0 8px 2px;
+}
+.side-status {
+    color: #0F172A;
+    background: #FAFCFE;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+.side-status strong {
+    color: #0F172A;
+}
+.side-status span {
+    color: #475569;
+    font-size: 0.82rem;
+}
+section[data-testid="stSidebar"] button {
+    border-radius: 8px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FAFCFE !important;
+    color: #0F172A !important;
     font-weight: 600 !important;
-    padding: 6px 16px !important;
-    font-size: 0.85rem !important;
+    transition: all 0.2s ease !important;
+}
+section[data-testid="stSidebar"] button:hover {
+    background: #E2E8F0 !important;
+    border-color: #0ea5e9 !important;
+    color: #0ea5e9 !important;
+}
+
+/* Popover / Model selection */
+.model-picker-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 10px 0 8px 0;
+}
+div[data-testid="stPopover"] > button {
+    border-radius: 999px !important;
+    background: #FAFCFE !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #0ea5e9 !important;
+    font-weight: 700 !important;
+    padding: 8px 18px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 div[data-testid="stPopover"] > button:hover {
-    background: #f1f3f4 !important;
-    border-color: #1a73e8 !important;
+    background: #E2E8F0 !important;
+    border-color: #0ea5e9 !important;
 }
-
-/* Badges styling */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #e8f0fe;
-    border: 1px solid #c2e7ff;
-    color: #1a73e8;
-    border-radius: 16px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin: 4px 4px 8px 0;
+.model-menu-title {
+    color: #0F172A;
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin: 2px 0 8px 0;
+}
+.model-menu-help {
+    color: #475569;
+    font-size: 0.82rem;
+    margin: 10px 0 0 0;
+    padding-top: 10px;
+    border-top: 1px solid #E2E8F0;
 }
 
 /* Login/Signup styling */
@@ -681,17 +579,17 @@ div[data-testid="stPopover"] > button:hover {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #1a73e8;
-    background: #e8f0fe;
-    border: 1px solid #c2e7ff;
+    color: #0ea5e9;
+    background: rgba(14, 165, 233, 0.08);
+    border: 1px solid rgba(14, 165, 233, 0.2);
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 0.82rem;
     margin: 0 auto 24px auto;
 }
 div[data-testid="stForm"] {
-    background: #ffffff;
-    border: 1px solid #e3e3e3;
+    background: #FAFCFE;
+    border: 1px solid #E2E8F0;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
     min-height: 480px;
@@ -701,46 +599,46 @@ div[data-testid="stForm"] {
     justify-content: center;
 }
 div[data-testid="stForm"] label {
-    color: #202124 !important;
+    color: #0F172A !important;
     font-size: 0.88rem !important;
     font-weight: 650 !important;
 }
 div[data-testid="stForm"] input {
     border-radius: 8px;
-    background: #ffffff;
-    border: 1px solid #e3e3e3;
-    color: #202124 !important;
+    background: #FAFCFE;
+    border: 1px solid #E2E8F0;
+    color: #0F172A !important;
 }
 div[data-testid="stForm"] button {
-    background: #1a73e8;
-    border: 1px solid #1a73e8;
+    background: #0ea5e9;
+    border: 1px solid #0ea5e9;
     border-radius: 8px;
     color: #ffffff;
     font-weight: 700;
     transition: all 0.2s ease;
 }
 div[data-testid="stForm"] button:hover {
-    background: #1557b0;
-    border-color: #1557b0;
+    background: #0284c7;
+    border-color: #0284c7;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
 }
 
 /* AI Insights card */
 .ai-insights-card {
-    background: #f8f9fa;
-    border: 1px solid #e3e3e3;
-    border-left: 4px solid #1a73e8;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-left: 4px solid #0ea5e9;
     border-radius: 8px;
     padding: 24px;
     margin: 20px 0;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.01);
-    color: #202124;
+    color: #0F172A;
     font-size: 1.02rem;
     line-height: 1.65;
 }
 .ai-insights-title {
-    color: #1a73e8;
+    color: #0ea5e9;
     font-size: 1.35rem;
     font-weight: 700;
     margin-top: 0;
@@ -749,7 +647,26 @@ div[data-testid="stForm"] button:hover {
     align-items: center;
     gap: 8px;
 }
+
+/* Style for User messages (prompt section) background */
+div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    background-color: #F0F6FA !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding-bottom: 10px !important;
+}
+
+/* Style for Assistant messages (answer section) background */
+div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+    background-color: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding-bottom: 10px !important;
+}
+
+
 </style>
+
 """, unsafe_allow_html=True)
 
 
@@ -1134,7 +1051,24 @@ if st.session_state.authenticated:
 
 setup_database_session(show_errors=False)
 
-# Dynamic header will be rendered inside the Chat view.
+st.markdown("""
+<div class="cb-header">
+    <div class="cb-header-left">
+        <div class="cb-icon-container">
+            <i class="fa-solid fa-robot" style="font-size: 2.2rem; color: #0ea5e9;"></i>
+        </div>
+        <div>
+            <h1>Morepen AI Assistant</h1>
+            <p>
+                <i class="fa-solid fa-bolt" style="color: #fbbf24;"></i> Your All-in-One AI
+                &nbsp;•&nbsp; <i class="fa-solid fa-comment-dots"></i> Any Question or Task
+                &nbsp;•&nbsp; <i class="fa-solid fa-chart-pie"></i> Data &amp; File Analysis
+            </p>
+        </div>
+    </div>
+    <div class="live-dot" title="Assistant is online and ready"></div>
+</div>
+""", unsafe_allow_html=True)
 
 record_profiler_checkpoint("CSS & UI Styling")
 
@@ -3390,11 +3324,49 @@ def render_sidebar():
     selected = MODEL_OPTIONS.get(st.session_state.llm_provider, MODEL_OPTIONS["Gemini"])
     active_model = st.session_state.active_model_name or "Checking available models"
     with st.sidebar:
-        st.markdown('<div class="new-chat-container">', unsafe_allow_html=True)
-        if st.button("+ New chat", key="nav_Chat", use_container_width=True):
-            start_new_chat()
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="side-brand">
+            <div class="side-logo">
+                <i class="fa-solid fa-robot" style="font-size: 1.45rem; color: #0ea5e9;"></i>
+            </div>
+            <div>
+                <h3>Morepen AI</h3>
+                <p>Assistant workspace</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("New Chat", key="nav_Chat", use_container_width=True):
+                start_new_chat()
+                st.rerun()
+        with col2:
+            with st.popover("Delete", use_container_width=True):
+                st.markdown('<div style="color:#ef4444; font-weight:700; margin-bottom:8px; font-size:0.9rem;">Delete Chat</div>', unsafe_allow_html=True)
+                recent_chats = get_recent_conversations(limit=30)
+                if recent_chats:
+                    chat_list = []
+                    chat_options = {}
+                    for idx, c in enumerate(recent_chats):
+                        label = f"{idx+1}. {c['title']}"
+                        chat_list.append(label)
+                        chat_options[label] = c["id"]
+                    
+                    selected_chat_label = st.selectbox("Choose chat", chat_list, key="delete_chat_select")
+                    selected_chat_id = chat_options[selected_chat_label]
+                    if st.button("Confirm", type="primary", key="confirm_delete_chat", use_container_width=True):
+                        if db_enabled():
+                            db_action(delete_conversation, selected_chat_id)
+                        else:
+                            st.session_state.conversations = [c for c in st.session_state.conversations if c["id"] != selected_chat_id]
+                        
+                        # If deleting the currently active conversation, start a new chat
+                        if st.session_state.active_conversation_id == selected_chat_id:
+                            start_new_chat()
+                        st.success("Deleted!")
+                        st.rerun()
+                else:
+                    st.info("No chats to delete.")
 
         st.markdown('<div class="side-section-title">Recents</div>', unsafe_allow_html=True)
         # Fetch only up to current limit for displaying
@@ -3407,68 +3379,12 @@ def render_sidebar():
             recent_conversations = [c for c in all_recent if search_query.lower() in c["title"].lower()]
             
         if recent_conversations:
-            recents_container = st.container(height=280, border=False)
+            recents_container = st.container(height=260, border=False)
             with recents_container:
-                # Group conversations by date
-                import datetime
-                today = datetime.date.today()
-                yesterday = today - datetime.timedelta(days=1)
-                seven_days_ago = today - datetime.timedelta(days=7)
-                
-                grouped_conversations = {
-                    "Today": [],
-                    "Yesterday": [],
-                    "Previous 7 Days": [],
-                    "Older": []
-                }
-                
                 for conversation in recent_conversations:
-                    dt = None
-                    for key in ["updated_at", "created_at"]:
-                        val = conversation.get(key)
-                        if val:
-                            if isinstance(val, datetime.datetime):
-                                dt = val.date()
-                                break
-                            elif isinstance(val, datetime.date):
-                                dt = val
-                                break
-                            elif isinstance(val, str):
-                                try:
-                                    val_clean = val.split('+')[0].split('Z')[0]
-                                    dt = datetime.datetime.fromisoformat(val_clean).date()
-                                    break
-                                except Exception:
-                                    pass
-                    if dt is None:
-                        dt = today
-                    
-                    if dt == today:
-                        grouped_conversations["Today"].append(conversation)
-                    elif dt == yesterday:
-                        grouped_conversations["Yesterday"].append(conversation)
-                    elif dt >= seven_days_ago:
-                        grouped_conversations["Previous 7 Days"].append(conversation)
-                    else:
-                        grouped_conversations["Older"].append(conversation)
-                
-                st.markdown('<div class="sidebar-recents">', unsafe_allow_html=True)
-                for group_name, chats in grouped_conversations.items():
-                    if chats:
-                        st.markdown(f'<div class="recents-group-title">{group_name}</div>', unsafe_allow_html=True)
-                        for conversation in chats:
-                            is_active = (conversation["id"] == st.session_state.active_conversation_id)
-                            if is_active:
-                                st.markdown('<div class="active-chat">', unsafe_allow_html=True)
-                                if st.button(conversation["title"], key=f'recent_{conversation["id"]}', use_container_width=True):
-                                    load_conversation(conversation["id"])
-                                    st.rerun()
-                                st.markdown('</div>', unsafe_allow_html=True)
-                            else:
-                                if st.button(conversation["title"], key=f'recent_{conversation["id"]}', use_container_width=True):
-                                    load_conversation(conversation["id"])
-                                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                    if st.button(conversation["title"], key=f'recent_{conversation["id"]}', use_container_width=True):
+                        load_conversation(conversation["id"])
+                        st.rerun()
                 
                 # Render "Load More" button if there are more chats to display
                 total_available = 0
@@ -3491,30 +3407,22 @@ def render_sidebar():
                     st.rerun()
 
         st.markdown('<div class="side-section-title">Additional Features</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sidebar-features">', unsafe_allow_html=True)
-        
-        if st.session_state.selected_nav != "Chat":
-            if st.button("💬 Return to Chat", key="feature_Return_Chat", use_container_width=True):
-                st.session_state.selected_nav = "Chat"
-                st.rerun()
-
-        if st.button("📁 Document Library", key="feature_Document_Library", use_container_width=True):
-            st.session_state.selected_nav = "Document Library"
-            st.rerun()
-            
-        if st.button("📊 Data Analysis Workspace", key="feature_Data_Analysis", use_container_width=True):
-            st.session_state.selected_nav = "Data Analysis"
-            st.rerun()
-
-        if st.button("📅 Schedule AI Tasks", key="feature_Scheduled_Tasks", use_container_width=True):
-            st.session_state.selected_nav = "Schedule Tasks"
-            st.rerun()
-            
-        if st.button("☁️ Google Drive Upload", key="feature_Google_Drive_Upload", use_container_width=True):
+        if st.button("Upload from Google Drive", key="feature_Google_Drive_Upload", use_container_width=True):
             st.session_state.selected_nav = "Google Drive Upload"
             st.rerun()
             
-        st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Data Analysis Workspace", key="feature_Data_Analysis", use_container_width=True):
+            st.session_state.selected_nav = "Data Analysis"
+            st.rerun()
+
+        if st.button("Document & File Library", key="feature_Document_Library", use_container_width=True):
+            st.session_state.selected_nav = "Document Library"
+            st.rerun()
+
+        if st.button("Schedule Tasks", key="feature_Scheduled_Tasks", use_container_width=True):
+            st.session_state.selected_nav = "Schedule Tasks"
+            st.rerun()
+
 
         # Load GitHub Credentials to see if Explorer should be shown
         github_creds = st.session_state.get("github_credentials")
@@ -3534,14 +3442,14 @@ def render_sidebar():
         
         github_linked = bool(github_creds)
         if github_linked:
-            st.markdown('<div class="sidebar-features">', unsafe_allow_html=True)
-            if st.button("🐱 GitHub Repository Explorer", key="feature_Github_Explorer", use_container_width=True):
+            if st.button("GitHub Repository Explorer", key="feature_Github_Explorer", use_container_width=True):
                 st.session_state.selected_nav = "GitHub Explorer"
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
         # --- Google integration status and controls ---
         st.markdown('<div class="side-section-title">Google Services</div>', unsafe_allow_html=True)
+        
+        # Load Google Credentials (cached in session state)
         google_creds = st.session_state.get("google_credentials")
         if google_creds is None:
             if db_enabled() and st.session_state.db_user_id:
@@ -3561,8 +3469,8 @@ def render_sidebar():
         if google_linked:
             st.markdown(
                 """
-                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
-                    <span style="color: #10b981; font-weight: 600; font-size: 0.82rem;">🟢 Google Services Connected</span>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                    <span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">🟢 Google Services Connected</span>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -3593,15 +3501,15 @@ def render_sidebar():
                 f"prompt=consent&"
                 f"state=connect_google"
             )
-            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #1a73e8; background:#1a73e8; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#1557b0\'" onmouseout="this.style.background=\'#1a73e8\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{google_auth_url}" style="text-decoration:none; cursor: pointer !important; pointer-events: auto !important;"><button style="width:100%; height:38px; margin-bottom:10px; border-radius:10px; border:1px solid #0ea5e9; background:#0ea5e9; color:white; font-weight:700; cursor:pointer;" onmouseover="this.style.background=\'#0284c7\'" onmouseout="this.style.background=\'#0ea5e9\'">🔗 Connect Google Services</button></a>', unsafe_allow_html=True)
 
         # --- GitHub integration status and controls ---
-        st.markdown('<div class="side-section-title">GitHub</div>', unsafe_allow_html=True)
+        st.markdown('<div class="side-section-title">GitHub </div>', unsafe_allow_html=True)
         if github_linked:
             st.markdown(
                 """
-                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
-                    <span style="color: #10b981; font-weight: 600; font-size: 0.82rem;">🟢 GitHub Connected</span>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                    <span style="color: #10b981; font-weight: 700; font-size: 0.85rem;">🟢 GitHub Connected</span>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -3630,11 +3538,12 @@ def render_sidebar():
             else:
                 st.caption("ℹ️ Configure GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to enable GitHub connection.")
 
-        # --- Model info and user profile ---
+
+
         st.markdown('<div class="side-section-title">Current model</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
-            <div style="padding: 4px 8px; font-size: 0.85rem; color: #5f6368;">
+            <div class="side-status" style="margin-top:0;">
                 <strong>{selected["title"]}</strong><br>
                 <span>{active_model}</span>
             </div>
@@ -3644,42 +3553,32 @@ def render_sidebar():
 
         st.markdown('<div class="side-section-title">User</div>', unsafe_allow_html=True)
         current_user = st.session_state.get("username", "Guest")
-        parts = current_user.strip().split()
-        if len(parts) >= 2:
-            initials = (parts[0][0] + parts[1][0]).upper()
-        elif len(parts) == 1:
-            initials = parts[0][:2].upper()
-        else:
-            initials = "US"
-
-        col_profile, col_logout = st.columns([7.8, 2.2], vertical_alignment="center")
-        with col_profile:
-            st.markdown(
-                f"""
-                <div class="user-profile-container" style="border-top:none; padding-top:0; margin-top:0;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div class="user-avatar">{initials}</div>
-                        <div class="user-name">{current_user}</div>
-                    </div>
+        st.markdown(
+            f"""
+            <div class="side-status" style="margin-top:0; margin-bottom:10px; padding:10px 12px; display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-circle-user" style="font-size: 1.4rem; color: #0ea5e9;"></i>
+                <div>
+                    <span style="font-size:0.75rem; color:#475569; text-transform:uppercase; font-weight:800; letter-spacing:0.05em; display:block; line-height:1;">Signed in as</span>
+                    <strong style="color:#0F172A; font-size:0.88rem; display:block; margin-top:3px; word-break:break-all;">{current_user}</strong>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col_logout:
-            if st.button("🚪", key="logout_btn", help="Logout"):
-                st.session_state.authenticated = False
-                st.session_state.username = ""
-                st.session_state.db_user_id = None
-                st.session_state.cb_messages = []
-                st.session_state.active_conversation_id = None
-                st.session_state.cb_df = None
-                st.session_state.cb_df_name = ""
-                st.session_state.cb_file_text = ""
-                st.session_state.cb_img_bytes = None
-                st.session_state.cb_img_mime = None
-                st.session_state.ai_insights_narrative = ""
-                st.session_state.recent_conversations = None
-                st.rerun()
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        if st.button("Logout", use_container_width=True):
+            st.session_state.authenticated = False
+            st.session_state.username = ""
+            st.session_state.db_user_id = None
+            st.session_state.cb_messages = []
+            st.session_state.active_conversation_id = None
+            st.session_state.cb_df = None
+            st.session_state.cb_df_name = ""
+            st.session_state.cb_file_text = ""
+            st.session_state.cb_img_bytes = None
+            st.session_state.cb_img_mime = None
+            st.session_state.ai_insights_narrative = ""
+            st.session_state.recent_conversations = None
+            st.rerun()
 
 
 
@@ -4040,21 +3939,20 @@ if st.session_state.cb_df is not None:
     st.markdown(f'<span class="badge">📊 {st.session_state.cb_df_name} attached</span>', unsafe_allow_html=True)
 
 # --- quick prompts (data-aware) ---
+has_df = st.session_state.cb_df is not None
+if has_df:
+    quick = ["📊 Summarize this dataset", "🔍 Find key insights", "📈 Identify trends",
+             "🧹 Check data quality", "📉 Show correlations", "📋 Describe columns"]
+else:
+    quick = ["💡 Explain document", "📊 Summarize data", "🔍 Find insights",
+             "✍️ Write report", "📈 Analyze trends", "❓ Help guide"]
+st.markdown("**Quick prompts:**")
+qcols = st.columns(len(quick))
 chosen = None
-if not st.session_state.cb_messages:
-    has_df = st.session_state.cb_df is not None
-    if has_df:
-        quick = ["📊 Summarize this dataset", "🔍 Find key insights", "📈 Identify trends",
-                 "🧹 Check data quality", "📉 Show correlations", "📋 Describe columns"]
-    else:
-        quick = ["💡 Explain document", "📊 Summarize data", "🔍 Find insights",
-                 "✍️ Write report", "📈 Analyze trends", "❓ Help guide"]
-    st.markdown("**Quick prompts:**")
-    qcols = st.columns(len(quick))
-    for i, q in enumerate(quick):
-        with qcols[i]:
-            if st.button(q, key=f"cbq_{i}", use_container_width=True):
-                chosen = q.split(" ", 1)[1]
+for i, q in enumerate(quick):
+    with qcols[i]:
+        if st.button(q, key=f"cbq_{i}", use_container_width=True):
+            chosen = q.split(" ", 1)[1]
 
 record_profiler_checkpoint("Quick Prompts & Navigation Routing")
 
@@ -4081,9 +3979,9 @@ def render_copy_button(text, key):
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                background-color: #ffffff;
-                color: #5f6368;
-                border: 1px solid #e3e3e3;
+                background-color: #fbfaf7;
+                color: #6b685c;
+                border: 1px solid #e5e3d9;
                 font-size: 1rem;
                 border-radius: 8px;
                 cursor: pointer;
@@ -4095,17 +3993,17 @@ def render_copy_button(text, key):
                 margin-top: 0px;
             }}
             .copy-btn:hover {{
-                background-color: #f1f3f4;
-                border-color: #1a73e8;
-                color: #1a73e8;
+                background-color: #F0F6FA;
+                border-color: #0ea5e9;
+                color: #0ea5e9;
             }}
             .copy-btn:active {{
                 transform: scale(0.95);
             }}
             .copied {{
-                background-color: #e6f4ea !important;
-                border-color: #137333 !important;
-                color: #137333 !important;
+                background-color: rgba(16, 185, 129, 0.08) !important;
+                border-color: #10b981 !important;
+                color: #10b981 !important;
             }}
         </style>
     </head>
@@ -4210,41 +4108,6 @@ def render_copy_button(text, key):
     """
     import urllib.parse
     st.iframe(f"data:text/html;charset=utf-8,{urllib.parse.quote(button_html)}", height=33)
-
-# --- dynamic chat header ---
-active_title = "New Chat"
-if st.session_state.get("active_conversation_id"):
-    # resolve title from recent chats
-    recent = get_recent_conversations(limit=1000)
-    for c in recent:
-        if c["id"] == st.session_state.active_conversation_id:
-            active_title = c["title"]
-            break
-elif st.session_state.cb_messages:
-    # fallback to generated title
-    active_title = get_conversation_title(st.session_state.cb_messages)
-
-col_header_title, col_header_actions = st.columns([8.2, 1.8], vertical_alignment="center")
-with col_header_title:
-    st.markdown(f'<div class="chat-header-title-text">{active_title}</div>', unsafe_allow_html=True)
-with col_header_actions:
-    col_share, col_delete = st.columns(2)
-    with col_share:
-        if st.button("📤", key="share_chat_btn", help="Copy share link"):
-            st.toast("Copied transcript to clipboard!")
-    with col_delete:
-        with st.popover("🗑️", help="Delete Chat"):
-            st.markdown('<div style="color:#ef4444; font-weight:700; margin-bottom:8px; font-size:0.85rem;">Delete this chat?</div>', unsafe_allow_html=True)
-            if st.button("Confirm Delete", key="header_delete_confirm", type="primary", use_container_width=True):
-                if db_enabled() and st.session_state.active_conversation_id:
-                    db_action(delete_conversation, st.session_state.active_conversation_id)
-                else:
-                    st.session_state.conversations = [c for c in st.session_state.conversations if c["id"] != st.session_state.active_conversation_id]
-                start_new_chat()
-                st.success("Deleted chat successfully!")
-                st.rerun()
-
-st.markdown('<hr class="header-divider">', unsafe_allow_html=True)
 
 # --- chat history ---
 chat_box = st.container()
