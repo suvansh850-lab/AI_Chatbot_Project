@@ -629,15 +629,17 @@ document.addEventListener('DOMContentLoaded', () => {
     enhanceCodeBlocks(bubble);
 
     // Render report download buttons if download link is detected
-    const reportRegex = /\/reports\/report_[a-f0-9]{8}\.(pdf|xlsx|pptx)/g;
-    const matches = content.match(reportRegex);
-    if (matches) {
-      matches.forEach(url => {
-        const fileExt = url.split('.').pop().toUpperCase();
-        const filename = `Document_Export_${url.split('_').pop()}`;
-        const card = createReportDownloadCard(filename, url);
-        bubble.appendChild(card);
-      });
+    if (content && typeof content === 'string') {
+      const reportRegex = /\/reports\/report_[a-f0-9]{8}\.(pdf|xlsx|pptx)/g;
+      const matches = content.match(reportRegex);
+      if (matches) {
+        matches.forEach(url => {
+          const fileExt = url.split('.').pop().toUpperCase();
+          const filename = `Document_Export_${url.split('_').pop()}`;
+          const card = createReportDownloadCard(filename, url);
+          bubble.appendChild(card);
+        });
+      }
     }
 
     // Add Speech (TTS) utilities on assistant bubbles

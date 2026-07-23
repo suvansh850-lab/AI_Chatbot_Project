@@ -2,19 +2,17 @@
 
 import os
 import uuid
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
-from pptx import Presentation
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
 
 REPORTS_DIR = os.path.join("static", "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ─── 1. PDF GENERATOR (ReportLab) ───
 def generate_pdf_report(title: str, headers: list[str], rows: list[list], summary_text: str) -> str:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+
     filename = f"report_{uuid.uuid4().hex[:8]}.pdf"
     filepath = os.path.join(REPORTS_DIR, filename)
     
@@ -66,6 +64,9 @@ def generate_pdf_report(title: str, headers: list[str], rows: list[list], summar
 
 # ─── 2. EXCEL GENERATOR (openpyxl) ───
 def generate_excel_report(title: str, headers: list[str], rows: list[list]) -> str:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+
     filename = f"report_{uuid.uuid4().hex[:8]}.xlsx"
     filepath = os.path.join(REPORTS_DIR, filename)
     
@@ -106,6 +107,8 @@ def generate_excel_report(title: str, headers: list[str], rows: list[list]) -> s
 
 # ─── 3. POWERPOINT GENERATOR (python-pptx) ───
 def generate_pptx_report(title: str, bullets: list[str]) -> str:
+    from pptx import Presentation
+
     filename = f"report_{uuid.uuid4().hex[:8]}.pptx"
     filepath = os.path.join(REPORTS_DIR, filename)
     
