@@ -413,6 +413,47 @@ def api_clear_messages(conversation_id: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ── Report Generation API Routes ────────────────────────────────────
+from pydantic import BaseModel
+from fastapi import Body
+from .report_service import generate_pdf_report, generate_excel_report, generate_pptx_report
+from .crew_report import run_report_crew
+
+class ReportRequest(BaseModel):
+    format: str  # "pdf", "excel", "pptx"
+    title: str
+    headers: list[str] = []
+    rows: list[list] = []
+    summary: str = ""
+    bullets: list[str] = []
+
+@app.post("/api/reports")
+def api_create_report(request: ReportRequest):
+    try:
+        if request.format == "pdf":
+            url = generate_pdf_report(request.title, request.headers, request.rows, request.summary)
+        elif request.format == "excel":
+            url = generate_excel_report(request.title, request.headers, request.rows)
+        elif request.format == "pptx":
+            url = generate_pptx_report(request.title, request.bullets)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid format specified. Must be 'pdf', 'excel', or 'pptx'.")
+        return {"status": "ok", "download_url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/reports/crew")
+def api_run_crew_report(
+    raw_data: str = Body(..., embed=True),
+    format: str = Body("pdf", embed=True)
+):
+    try:
+        crew_response = run_report_crew(raw_data, format)
+        return {"status": "ok", "crew_output": crew_response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── Serving Static Files ────────────────────────────────────────────
 from fastapi.responses import FileResponse
 

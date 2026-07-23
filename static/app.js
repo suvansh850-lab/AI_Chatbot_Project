@@ -628,6 +628,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Code blocks post-processing: add copies & labels
     enhanceCodeBlocks(bubble);
 
+    // Render report download buttons if download link is detected
+    const reportRegex = /\/reports\/report_[a-f0-9]{8}\.(pdf|xlsx|pptx)/g;
+    const matches = content.match(reportRegex);
+    if (matches) {
+      matches.forEach(url => {
+        const fileExt = url.split('.').pop().toUpperCase();
+        const filename = `Document_Export_${url.split('_').pop()}`;
+        const card = createReportDownloadCard(filename, url);
+        bubble.appendChild(card);
+      });
+    }
+
     // Add Speech (TTS) utilities on assistant bubbles
     if (role === 'assistant') {
       const controls = document.createElement('div');
@@ -651,6 +663,40 @@ document.addEventListener('DOMContentLoaded', () => {
     wrapper.appendChild(avatar);
     wrapper.appendChild(bubble);
     elChatMessages.appendChild(wrapper);
+  }
+
+  function createReportDownloadCard(filename, downloadUrl) {
+    const card = document.createElement('div');
+    card.className = 'doc-info-tag report-download-card';
+    card.style.marginTop = '10px';
+    card.style.display = 'flex';
+    card.style.alignItems = 'center';
+    card.style.gap = '10px';
+    card.style.background = 'rgba(255, 255, 255, 0.05)';
+    card.style.border = '1px solid var(--border)';
+    card.style.borderRadius = '8px';
+    card.style.padding = '8px 12px';
+    
+    card.innerHTML = `
+      <i class="fa-solid fa-file-arrow-down" style="font-size: 1.3rem; color: var(--primary);"></i>
+      <div style="flex: 1; text-align: left;">
+        <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">${escapeHTML(filename)}</div>
+        <div style="font-size: 0.7rem; color: var(--text-secondary);">Click button to download</div>
+      </div>
+      <a href="${downloadUrl}" download style="
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: var(--transition-fast);
+      " onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
+        Download
+      </a>
+    `;
+    return card;
   }
 
   function enhanceCodeBlocks(container) {

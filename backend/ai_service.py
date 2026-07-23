@@ -342,9 +342,84 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
         messages = build_openai_messages(combined_messages, current_text, request, sys_prompt)
 
         # Prepare tools
-        tools_list = []
+        tools_list = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "generate_pdf_report",
+                    "description": "Generate a downloadable PDF report with a title, a table of data, and a summary.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string", "description": "The main title of the PDF report."},
+                            "headers": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of table header strings."
+                            },
+                            "rows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "description": "List of rows, where each row is an array of column cell values."
+                            },
+                            "summary": {"type": "string", "description": "A short summary paragraph describing the data findings."}
+                        },
+                        "required": ["title", "headers", "rows", "summary"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "generate_excel_report",
+                    "description": "Generate a downloadable Excel spreadsheet file containing structured table rows.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string", "description": "Main title at the top of the sheet."},
+                            "headers": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of spreadsheet headers."
+                            },
+                            "rows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "description": "List of rows containing column data."
+                            }
+                        },
+                        "required": ["title", "headers", "rows"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "generate_pptx_report",
+                    "description": "Generate a downloadable PowerPoint slide deck (.pptx) with bullet slides summarizing data.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string", "description": "Title slide main text."},
+                            "bullets": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of key takeaways to render as bullet points."
+                            }
+                        },
+                        "required": ["title", "bullets"]
+                    }
+                }
+            }
+        ]
         if access_token:
-            tools_list = [
+            tools_list.extend([
                 {
                     "type": "function",
                     "function": {
@@ -484,6 +559,39 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
                         github_access_token
                     )
                     res = f"Pull Request created: {res_obj.get('html_url')}" if res_obj else "Failed to create Pull Request."
+                elif tool_call.function.name == "generate_pdf_report":
+                    from .report_service import generate_pdf_report
+                    try:
+                        url = generate_pdf_report(
+                            args.get("title", ""),
+                            args.get("headers", []),
+                            args.get("rows", []),
+                            args.get("summary", "")
+                        )
+                        res = f"Successfully created PDF report. Direct download URL: {url}"
+                    except Exception as e:
+                        res = f"Error creating PDF report: {e}"
+                elif tool_call.function.name == "generate_excel_report":
+                    from .report_service import generate_excel_report
+                    try:
+                        url = generate_excel_report(
+                            args.get("title", ""),
+                            args.get("headers", []),
+                            args.get("rows", [])
+                        )
+                        res = f"Successfully created Excel report. Direct download URL: {url}"
+                    except Exception as e:
+                        res = f"Error creating Excel report: {e}"
+                elif tool_call.function.name == "generate_pptx_report":
+                    from .report_service import generate_pptx_report
+                    try:
+                        url = generate_pptx_report(
+                            args.get("title", ""),
+                            args.get("bullets", [])
+                        )
+                        res = f"Successfully created PowerPoint presentation. Direct download URL: {url}"
+                    except Exception as e:
+                        res = f"Error creating PowerPoint presentation: {e}"
                 else:
                     res = "Unknown function call"
 
@@ -513,7 +621,52 @@ def generate_chat_response(request: ChatRequest) -> ChatResponse:
     if genai is None:
         raise RuntimeError("Install google-generativeai first: pip install google-generativeai")
 
-    tools = [open_local_browser_tab, browse_webpage]
+    def generate_pdf_report_tool(title: str, headers: list[str], rows: list[list[str]], summary: str) -> str:
+        """Generate a downloadable PDF report containing a styled table and summary description.
+
+        Args:
+            title: The main title heading at the top of the PDF document.
+            headers: List of column header names for the table.
+            rows: List of rows, where each row is a list of column values.
+            summary: A brief description summarizing the data or core findings.
+        """
+        from .report_service import generate_pdf_report
+        try:
+            url = generate_pdf_report(title, headers, rows, summary)
+            return f"Successfully generated PDF report. Direct download URL: {url}"
+        except Exception as e:
+            return f"Failed to generate PDF report: {e}"
+
+    def generate_excel_report_tool(title: str, headers: list[str], rows: list[list[str]]) -> str:
+        """Generate a downloadable Excel spreadsheet (.xlsx) with structured grid tables.
+
+        Args:
+            title: Title header to render at the top cell merge range.
+            headers: List of column header names.
+            rows: List of rows, where each row is a list of column values.
+        """
+        from .report_service import generate_excel_report
+        try:
+            url = generate_excel_report(title, headers, rows)
+            return f"Successfully generated Excel report. Direct download URL: {url}"
+        except Exception as e:
+            return f"Failed to generate Excel report: {e}"
+
+    def generate_pptx_report_tool(title: str, bullets: list[str]) -> str:
+        """Generate a downloadable PowerPoint slide deck (.pptx) containing bullet summaries.
+
+        Args:
+            title: Presentation title slide text.
+            bullets: List of bullet points detailing findings to show on slides.
+        """
+        from .report_service import generate_pptx_report
+        try:
+            url = generate_pptx_report(title, bullets)
+            return f"Successfully generated PowerPoint presentation. Direct download URL: {url}"
+        except Exception as e:
+            return f"Failed to generate PowerPoint presentation: {e}"
+
+    tools = [open_local_browser_tab, browse_webpage, generate_pdf_report_tool, generate_excel_report_tool, generate_pptx_report_tool]
 
     if access_token:
         from .google_service import draft_email, create_event
