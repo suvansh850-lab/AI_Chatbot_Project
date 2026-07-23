@@ -664,6 +664,344 @@ div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"
     padding-bottom: 10px !important;
 }
 
+/* ===== RESPONSIVE MEDIA QUERIES ===== */
+
+/* Desktop/Laptop: 1024px and above */
+@media (min-width: 1024px) {
+    .cb-header {
+        padding: 20px 28px;
+        margin-bottom: 24px;
+    }
+    .cb-header h1 {
+        font-size: 1.8rem;
+    }
+    .cb-header-left {
+        gap: 18px;
+    }
+    .cb-icon-container {
+        padding: 10px;
+    }
+    .side-brand h3 {
+        font-size: 1rem;
+    }
+    div[data-testid="stForm"] {
+        padding: 40px 48px;
+        min-height: 480px;
+    }
+    .ai-insights-card {
+        padding: 24px;
+        font-size: 1.02rem;
+    }
+}
+
+/* Tablet: 768px to 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .cb-header {
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        flex-direction: column;
+        text-align: center;
+    }
+    .cb-header::before {
+        width: 160px;
+        height: 160px;
+        top: -40px;
+        right: -40px;
+    }
+    .cb-header-left {
+        gap: 14px;
+        margin-bottom: 12px;
+        flex-direction: column;
+        align-items: center;
+    }
+    .cb-header h1 {
+        font-size: 1.4rem;
+    }
+    .cb-header p {
+        font-size: 0.85rem;
+    }
+    .cb-icon-container {
+        padding: 8px;
+    }
+    .side-brand {
+        padding: 6px 2px 14px 2px;
+        gap: 10px;
+    }
+    .side-brand h3 {
+        font-size: 0.9rem;
+    }
+    .side-logo {
+        width: 38px;
+        height: 38px;
+    }
+    div[data-testid="stForm"] {
+        padding: 30px 36px;
+        min-height: auto;
+    }
+    div[data-testid="stForm"] label {
+        font-size: 0.82rem !important;
+    }
+    .ai-insights-card {
+        padding: 18px;
+        font-size: 0.95rem;
+        margin: 16px 0;
+    }
+    .ai-insights-title {
+        font-size: 1.15rem;
+        margin-bottom: 12px;
+    }
+    .login-copy h2 {
+        font-size: 1.25rem;
+    }
+    .login-mark {
+        width: 48px;
+        height: 48px;
+    }
+    div[data-testid="stPopover"] > button {
+        padding: 6px 14px !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Mobile: Below 768px */
+@media (max-width: 767px) {
+    /* General */
+    .cb-header {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        flex-direction: column;
+        text-align: center;
+        border-radius: 8px;
+    }
+    .cb-header::before {
+        width: 120px;
+        height: 120px;
+        top: -30px;
+        right: -30px;
+        background: radial-gradient(circle, rgba(254, 167, 0, 0.08) 0%, transparent 70%);
+    }
+    .cb-header-left {
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    .cb-header h1 {
+        font-size: 1.2rem;
+        letter-spacing: 0;
+    }
+    .cb-header p {
+        font-size: 0.78rem;
+        gap: 6px;
+    }
+    .cb-icon-container {
+        padding: 6px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Sidebar on mobile */
+    section[data-testid="stSidebar"] {
+        width: 100% !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0.8rem;
+    }
+    .side-brand {
+        padding: 4px 2px 10px 2px;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .side-brand h3 {
+        font-size: 0.8rem;
+        line-height: 1.1;
+    }
+    .side-brand p {
+        font-size: 0.68rem;
+    }
+    .side-logo {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+        flex-shrink: 0;
+    }
+    .side-section-title {
+        font-size: 0.65rem;
+        margin: 10px 0 6px 2px;
+    }
+    .side-status {
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 0.75rem;
+    }
+    section[data-testid="stSidebar"] button {
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Forms on mobile */
+    div[data-testid="stForm"] {
+        padding: 20px 24px;
+        min-height: auto;
+        border-radius: 10px;
+    }
+    div[data-testid="stForm"] label {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stForm"] input {
+        border-radius: 6px;
+        font-size: 0.85rem;
+        padding: 8px 10px !important;
+    }
+    div[data-testid="stForm"] button {
+        padding: 10px 16px !important;
+        font-size: 0.9rem !important;
+        border-radius: 6px;
+    }
+    
+    /* Login screen */
+    .login-brand {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .login-mark {
+        width: 44px;
+        height: 44px;
+    }
+    .login-copy h2 {
+        font-size: 1.1rem;
+        line-height: 1.2;
+    }
+    .login-copy p {
+        font-size: 0.8rem;
+    }
+    .login-meta {
+        padding: 5px 12px;
+        font-size: 0.75rem;
+        gap: 6px;
+    }
+    
+    /* Cards and messaging */
+    .ai-insights-card {
+        padding: 14px;
+        margin: 12px 0;
+        font-size: 0.9rem;
+        border-radius: 8px;
+        border-left-width: 3px;
+    }
+    .ai-insights-title {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        gap: 6px;
+    }
+    div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+        border-radius: 10px !important;
+        padding: 8px !important;
+        margin: 6px 0 !important;
+    }
+    div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+        border-radius: 10px !important;
+        padding: 8px !important;
+        margin: 6px 0 !important;
+    }
+    
+    /* Popover/Model selection */
+    .model-picker-row {
+        margin: 8px 0 6px 0;
+        justify-content: center;
+    }
+    div[data-testid="stPopover"] > button {
+        padding: 6px 12px !important;
+        font-size: 0.78rem !important;
+        border-radius: 20px !important;
+    }
+    .model-menu-title {
+        font-size: 0.85rem;
+    }
+    .model-menu-help {
+        font-size: 0.75rem;
+    }
+    
+    /* Mic button positioning on mobile */
+    iframe[title="audio_recorder_streamlit.audio_recorder"] {
+        width: 32px !important;
+        height: 32px !important;
+        right: calc(1rem + 50px) !important;
+    }
+    .voice-search-label {
+        font-size: 0.75rem !important;
+        right: calc(1rem + 100px) !important;
+    }
+    
+    /* Font sizes for better mobile readability */
+    body {
+        font-size: 14px;
+    }
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 1rem; }
+    p { font-size: 0.9rem; }
+}
+
+/* Small Mobile: Below 480px */
+@media (max-width: 479px) {
+    .cb-header {
+        padding: 10px 12px;
+        margin-bottom: 12px;
+    }
+    .cb-header h1 {
+        font-size: 1rem;
+    }
+    .cb-header-left {
+        gap: 8px;
+    }
+    .cb-icon-container {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+    }
+    
+    div[data-testid="stForm"] {
+        padding: 16px 20px;
+    }
+    .login-mark {
+        width: 40px;
+        height: 40px;
+    }
+    .login-copy h2 {
+        font-size: 1rem;
+    }
+    
+    .ai-insights-card {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+    .ai-insights-title {
+        font-size: 0.95rem;
+    }
+    
+    section[data-testid="stSidebar"] button {
+        padding: 6px 10px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    div[data-testid="stPopover"] > button {
+        padding: 4px 10px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    body {
+        font-size: 13px;
+    }
+    h1 { font-size: 1.15rem; }
+    h2 { font-size: 1rem; }
+}
 
 </style>
 
