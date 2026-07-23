@@ -22,7 +22,12 @@ try:
         create_conversation,
         save_message,
         get_connection,
-        get_secret
+        get_secret,
+        verify_user,
+        list_conversations,
+        load_messages,
+        delete_conversation,
+        clear_conversation_messages
     )
 except Exception as e:
     print(f"Error importing from database module in backend: {e}")
@@ -33,6 +38,11 @@ except Exception as e:
     create_conversation = None
     save_message = None
     get_connection = None
+    verify_user = None
+    list_conversations = None
+    load_messages = None
+    delete_conversation = None
+    clear_conversation_messages = None
     def get_secret(key: str, default: str = "") -> str:
         return os.getenv(key, default)
 
@@ -55,6 +65,11 @@ def setup_database():
             init_database()
         except Exception:
             pass
+    if ensure_user:
+        try:
+            ensure_user("admin", "suvansh123")
+        except Exception as e:
+            print(f"Error creating default admin user in backend startup: {e}")
     try:
         from .scheduler import start_scheduler
         start_scheduler()
@@ -87,7 +102,22 @@ def models(provider: str):
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
     try:
+        # Save user message if conversation is active
+        if request.conversation_id and save_message:
+            try:
+                save_message(request.conversation_id, "user", request.prompt)
+            except Exception as e:
+                print(f"Error saving user message to database: {e}")
+
         response = generate_chat_response(request)
+
+        # Save assistant message if conversation is active
+        if request.conversation_id and save_message:
+            try:
+                save_message(request.conversation_id, "assistant", response.answer)
+            except Exception as e:
+                print(f"Error saving assistant message to database: {e}")
+
         if save_api_log:
             try:
                 save_api_log(
@@ -282,6 +312,131 @@ async def webhook_telegram(request: Request, background_tasks: BackgroundTasks):
     background_tasks.add_task(process_telegram_webhook, chat_id, text_body, token)
     
     return {"status": "accepted"}
+
+
+# ── User and Conversation API Routes ────────────────────────────────
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/login")
+def api_login(request: LoginRequest):
+    if not verify_user:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    
+    user_id = verify_user(request.username, request.password)
+    if user_id is None:
+        if request.username == "admin" and request.password == "suvansh123":
+            if ensure_user:
+                user_id = ensure_user("admin", "suvansh123")
+            else:
+                user_id = 1
+        else:
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+            
+    return {"status": "ok", "user_id": user_id, "username": request.username}
+
+
+@app.get("/api/conversations")
+def api_list_conversations(user_id: int):
+    if not list_conversations:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    try:
+        convs = list_conversations(user_id, limit=50)
+        return {"status": "ok", "conversations": convs}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class CreateConversationRequest(BaseModel):
+    user_id: int
+    title: str = "New Chat"
+    provider: str = "Gemini"
+    model_name: str = ""
+
+@app.post("/api/conversations")
+def api_create_conversation(request: CreateConversationRequest):
+    if not create_conversation:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    try:
+        conv_id = create_conversation(
+            request.user_id,
+            title=request.title,
+            provider=request.provider,
+            model_name=request.model_name
+        )
+        return {"status": "ok", "conversation_id": conv_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/api/conversations/{conversation_id}")
+def api_delete_conversation(conversation_id: int):
+    if not delete_conversation:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    try:
+        delete_conversation(conversation_id)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/conversations/{conversation_id}/messages")
+def api_get_messages(conversation_id: int):
+    if not load_messages:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    try:
+        msgs = load_messages(conversation_id)
+        formatted_msgs = []
+        for m in msgs:
+            formatted_msgs.append({
+                "id": m.get("id"),
+                "role": m.get("role"),
+                "content": m.get("content"),
+                "created_at": m.get("created_at")
+            })
+        return {"status": "ok", "messages": formatted_msgs}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/api/conversations/{conversation_id}/clear")
+def api_clear_messages(conversation_id: int):
+    if not clear_conversation_messages:
+        raise HTTPException(status_code=500, detail="Database module is not available")
+    try:
+        clear_conversation_messages(conversation_id)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Serving Static Files ────────────────────────────────────────────
+from fastapi.responses import FileResponse
+
+@app.get("/")
+def read_index():
+    index_path = os.path.join("static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="Frontend index.html not found")
+
+@app.get("/{path:path}")
+def read_static(path: str):
+    if path.startswith("api/") or path.startswith("health") or path.startswith("models/") or path.startswith("chat") or path.startswith("transcribe") or path.startswith("synthesize") or path.startswith("webhook/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    
+    filepath = os.path.join("static", path)
+    if os.path.exists(filepath) and os.path.isfile(filepath):
+        return FileResponse(filepath)
+        
+    index_path = os.path.join("static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+        
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 

@@ -1,21 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Morepen AI Assistant Workspace</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <!-- FontAwesome for standard icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script type="module" crossorigin src="/assets/index-86ccedf2.js"></script>
-    <link rel="stylesheet" href="/assets/index-9cf8870a.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morepen AI Assistant Workspace</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <!-- FontAwesome for standard icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Local Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-container" class="glass-panel">
+      <div class="login-box animate-fade-in">
+        <div class="login-header">
+          <div class="logo">🤖</div>
+          <h1>Morepen AI Workspace</h1>
+          <p>Sign in to access your intelligent chatbot workspace</p>
+        </div>
+        <form id="login-form">
+          <div class="input-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" required placeholder="admin" value="admin">
+          </div>
+          <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="••••••••" value="suvansh123">
+          </div>
+          <div id="login-error" class="error-msg hidden"></div>
+          <button type="submit" class="btn btn-primary">
+            Sign In <i class="fa-solid fa-right-to-bracket"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-container" class="hidden">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-area">
+            <span class="logo-icon">🤖</span>
+            <span class="logo-text">Morepen AI</span>
+          </div>
+          <button id="close-sidebar-btn" class="mobile-only-btn" title="Close Sidebar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <button id="new-chat-btn" class="btn btn-primary-outline">
+          <i class="fa-solid fa-plus"></i> New Chat
+        </button>
+
+        <div class="conversations-wrapper">
+          <div class="sidebar-section-title">CHATS</div>
+          <div id="conversations-list">
+            <!-- Conversations loaded dynamically -->
+          </div>
+        </div>
+
+        <div id="sidebar-footer">
+          <div class="user-info">
+            <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            <div class="user-details">
+              <span id="user-display-name">Admin</span>
+              <span class="status-online">Online</span>
+            </div>
+          </div>
+          <button id="logout-btn" title="Log Out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Chat Area -->
+      <main id="chat-area">
+        <!-- Chat Header -->
+        <header id="chat-header">
+          <div class="header-left">
+            <button id="toggle-sidebar-btn" title="Toggle Sidebar">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="chat-meta">
+              <h2 id="active-chat-title">New Chat</h2>
+              <div class="status-indicator">
+                <span class="status-dot green" id="db-status-dot"></span>
+                <span id="db-status-text">Backend Connected</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <!-- Provider selector -->
+            <div class="control-group">
+              <label for="provider-select">Provider</label>
+              <select id="provider-select">
+                <option value="Gemini">Gemini</option>
+                <option value="Groq">Groq</option>
+              </select>
+            </div>
+
+            <!-- Model selector -->
+            <div class="control-group">
+              <label for="model-select">Model</label>
+              <select id="model-select">
+                <!-- Loaded dynamically -->
+              </select>
+            </div>
+
+            <!-- Action buttons -->
+            <button id="clear-chat-btn" class="btn-icon" title="Clear Chat Messages">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Message History -->
+        <section id="chat-history">
+          <!-- Welcome Screen -->
+          <div id="welcome-screen" class="welcome-container">
+            <div class="welcome-icon">🤖</div>
+            <h1>How can I assist you today?</h1>
+            <p>Select a provider, choose a model, and ask anything. You can upload files, upload images, search the web, or use voice transcription.</p>
+            
+            <div class="suggestions-grid">
+              <button class="suggestion-card" data-prompt="Analyze the database health status and let me know.">
+                <h3>🔍 Check Health</h3>
+                <p>Analyze database health status and connection details</p>
+              </button>
+              <button class="suggestion-card" data-prompt="Write a Python script that reads a CSV file and calculates the averages.">
+                <h3>💻 Python Script</h3>
+                <p>Generate a python script to process CSV metrics</p>
+              </button>
+              <button class="suggestion-card" data-prompt="Explain the difference between Gemini and Groq architectures.">
+                <h3>💡 Explain Architectures</h3>
+                <p>Analyze Gemini and Groq models and their key differences</p>
+              </button>
+              <button class="suggestion-card" data-prompt="Summarize the core schema of the tables in our DB.">
+                <h3>📊 Database Schema</h3>
+                <p>Explain user, conversation, and message tables</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Bubbles Area -->
+          <div id="chat-messages" class="hidden">
+            <!-- Loaded dynamically -->
+          </div>
+        </section>
+
+        <!-- Input Area Container -->
+        <footer id="chat-input-container">
+          <!-- Upload Preview -->
+          <div id="attachment-preview-bar" class="hidden">
+            <div class="preview-content animate-fade-in">
+              <span id="preview-icon"><i class="fa-solid fa-file-import"></i></span>
+              <span id="preview-filename">document.txt</span>
+              <button id="remove-attachment-btn" title="Remove Attachment">
+                <i class="fa-solid fa-circle-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-panel">
+            <div class="input-actions-left">
+              <!-- Web Search toggle -->
+              <div class="search-toggle-container" title="Search the web for real-time information">
+                <label class="switch">
+                  <input type="checkbox" id="web-search-toggle">
+                  <span class="slider round"></span>
+                </label>
+                <span class="toggle-label"><i class="fa-solid fa-globe"></i> Web Search</span>
+              </div>
+
+              <!-- Attach file / image -->
+              <div class="attachment-btn-group">
+                <button id="attach-doc-btn" class="btn-icon-text" title="Attach Document (TXT, PDF, DOCX)">
+                  <i class="fa-solid fa-paperclip"></i> <span>Document</span>
+                </button>
+                <button id="attach-img-btn" class="btn-icon-text" title="Attach Image (PNG, JPG)">
+                  <i class="fa-solid fa-image"></i> <span>Image</span>
+                </button>
+                <!-- Hidden inputs -->
+                <input type="file" id="doc-file-input" accept=".txt,.csv,.json,.pdf,.docx" class="hidden">
+                <input type="file" id="img-file-input" accept="image/png,image/jpeg,image/webp" class="hidden">
+              </div>
+            </div>
+
+            <div class="input-row">
+              <textarea id="chat-input" rows="1" placeholder="Type a message or press the microphone to speak..."></textarea>
+              
+              <!-- Voice transcribe button -->
+              <button id="voice-btn" class="btn-circle btn-voice" title="Speak to Transcribe">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+              
+              <!-- Send button -->
+              <button id="send-btn" class="btn-circle btn-send" title="Send Message">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
 </html>
